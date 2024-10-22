@@ -124,7 +124,9 @@ def process_contact_info_func(team_json: list, team_list_pos: int, team_id_list:
                 if contacts['user']['id'] == id:
                     user_dict['id'] = id
                     if contacts['network'] == network:
+                        
                         user_dict['game_network_username'] = contacts['handle']
+
                     elif contacts['network'] == 'DISCORD':
                         user_dict['discord'] = contacts['handle']
             user_contacts.append(user_dict)
@@ -158,9 +160,3 @@ def get_encoding_type(encoded_str: str) -> str:
     except:
         return None
     
-def fix_encoding(encoded_str: str) -> None:
-    #check Encoding
-    if get_encoding_type(encoded_str) == 'utf-8':
-        open('test.txt', 'w', encoding='utf-8').write(encoded_str)
-    if get_encoding_type(encoded_str) == 'utf-16':
-        open('test.txt', 'w', encoding='utf-16').write(encoded_str)
