@@ -52,16 +52,19 @@ fortnite_api_url = "https://fortnite-api.com/v2/stats/br/v2/"
 
 comp_id= None
 network = None
-
+#Util
 def is_empty(var: any) -> bool:
     return var == None
 
+#Set Vars
 def set_comp_id(id: int) -> None:
     global comp_id ; comp_id =  id
 
 def set_game_network(networkIn: str) -> None:
     global network; network = networkIn
 
+
+#Funcs for Data
 def get_team_name(team_id: int) -> str:
     return json.loads(web.get(team_info_url.format(team_id)).text).get('alternateName', f'{team_id}')      
     
@@ -121,7 +124,9 @@ def process_contact_info_func(team_json: list, team_list_pos: int, team_id_list:
                 if contacts['user']['id'] == id:
                     user_dict['id'] = id
                     if contacts['network'] == network:
+                        
                         user_dict['game_network_username'] = contacts['handle']
+
                     elif contacts['network'] == 'DISCORD':
                         user_dict['discord'] = contacts['handle']
             user_contacts.append(user_dict)
@@ -138,3 +143,20 @@ def process_contact_info(teams_contacts: list, team_id_list: list) -> list:
     for x in tqdm(teams_contacts, total= len(teams_contacts), desc= 'Processing Teams'):
         temp_dict[get_team_name(team_id_list[teams_contacts.index(x)])] = process_contact_info_func(x, teams_contacts.index(x), team_id_list)
     return temp_dict
+
+#Fixes
+def get_encoding_type(encoded_str: str) -> str:
+    # UTF-8
+    try:
+        encoded_str.decode('utf-8')
+        return 'utf-8'
+    except:
+        pass
+    
+    # UTF-16
+    try:
+        encoded_str.decode('utf-16')
+        return 'utf-16'
+    except:
+        return None
+    
