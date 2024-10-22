@@ -144,19 +144,4 @@ def process_contact_info(teams_contacts: list, team_id_list: list) -> list:
         temp_dict[get_team_name(team_id_list[teams_contacts.index(x)])] = process_contact_info_func(x, teams_contacts.index(x), team_id_list)
     return temp_dict
 
-#Fixes
-def get_encoding_type(encoded_str: str) -> str:
-    # UTF-8
-    try:
-        encoded_str.decode('utf-8')
-        return 'utf-8'
-    except:
-        pass
-    
-    # UTF-16
-    try:
-        encoded_str.decode('utf-16')
-        return 'utf-16'
-    except:
-        return None
-    
+#Fixe
