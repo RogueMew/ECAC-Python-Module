@@ -63,9 +63,11 @@ class compDetails:
         
         return result
     
-    def is_empty(self) -> bool:
-        return self.data.get('id') is None
-        
+    def is_empty(self, param='id') -> bool:
+        if param not in list(self.data.keys()):
+            raise CustomError(f'{param} is Not in List of Acceptable Parameters: {list(self.data.keys())}')
+        return self.data.get(param) is None
+
 
 #Header
 ECAC_header = authHeader('Authorization')
@@ -76,7 +78,8 @@ comp_details = compDetails()
 
 #URLs
 contacts_url = "https://api.ecac.gg/competition/entry/{}/_view/contact-accounts"
-comp_url = "https://api.ecac.gg/competition/entry/document?competitionId={}&page=0&size={}&sort=seed" 
+comp_url = "https://api.ecac.gg/competition/entry/document?competitionId={}&page=0&size={}&sort=seed"
+bracket_url = 'https://api.ecac.gg/competition/entry/document?competitionId={}&brackets={}&page=0&size=2000'
 team_info_url = "https://api.ecac.gg/competition/entry/{}" 
 fortnite_api_url = "https://fortnite-api.com/v2/stats/br/v2/"
 
@@ -90,7 +93,7 @@ def is_empty(var: any) -> bool:
 def set_game_network(networkIn: str) -> None:
     global network; network = networkIn
 
-#Funcs for Data
+#Competition Functions
 def get_team_name(team_id: int) -> str:
     return json.loads(web.get(team_info_url.format(team_id)).text).get('alternateName', f'{team_id}')      
     
@@ -101,7 +104,6 @@ def grab_comp_json() -> dict:
     request = web.get(comp_url.format(comp_details.read(name=False, size=False)['id'], 1000))
 
     if request.status_code != 200:
-        print(request.text)
         raise CustomError(f'Request Error: {request.status_code}')
 
     if json.dumps(request.text) == {}:
@@ -109,9 +111,35 @@ def grab_comp_json() -> dict:
 
     return json.loads(request.text)
 
+#Bracket Functions
+def grab_bracket_json(bracket_id: int) -> dict:
+    if comp_details.is_empty():
+        raise CustomError('Competition ID is not Set')
+    request = web.get(bracket_url.format( comp_details.read(name=False, size=False)['id'], bracket_id))
+
+    if request.status_code != 200:
+        raise CustomError(f'Request Error: {request.status_code}')
+
+    if json.dumps(request.text) == {}:
+        raise CustomError('Empty Bracket Site')
+    
+    return json.loads(request.text)
+    
+def scrape_team_ids_bracket(bracket_contents: dict) -> list:
+    team_id_list = []
+    if 'content' not in list(bracket_contents.keys()):
+        raise CustomError('Missing Data')
+    for team in bracket_contents['content']:
+        
+        team_id_list.append(team['id'])
+    return team_id_list
+
+#Gather and Scrape Funcs   
 def scrape_team_ids(comp_contents:dict) -> list:
     team_id_list = []
-    for team in comp_contents:
+    if 'content' not in list(comp_contents.keys()):
+        raise CustomError('Missing Data')
+    for team in comp_contents['content']:
         team_id_list.append(team['id'])
     return team_id_list
 
@@ -169,5 +197,6 @@ def process_contact_info(teams_contacts: list, team_id_list: list) -> list:
     for x in tqdm(teams_contacts, total= len(teams_contacts), desc= 'Processing Teams'):
         temp_dict[get_team_name(team_id_list[teams_contacts.index(x)])] = process_contact_info_func(x, teams_contacts.index(x), team_id_list)
     return temp_dict
+
 
 #Fixe
