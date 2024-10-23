@@ -28,53 +28,80 @@ class CustomError(Exception):
 
 class compDetails:
     def __init__(self) -> None:
+        self.data = {
+            'name' : None,
+            'id' : None,
+            'size' : None
+        }
         pass
-    def set(self, id) -> None:
-        self.id = id
+
+    def set_id(self, id) -> None:
+        self.data['id'] = id
         pass
-    
-    def read_id(self) -> None:
-        return self.id
     
     def scrape_details(self) -> None:
-        request = web.get(comp_url.format(self.id))
-        print(request.text)
+        request = web.get(comp_url.format(self.data['id'], 1))
+        if request.status_code != 200:
+            raise CustomError(f'Error Communicating with Server, Error Code: {request.status_code} ')
+       
+        if 'content' in list(json.loads(request.text).keys()):
+            self.data = {
+                'name' : json.loads(request.text)['content'][0]['competition'].get('name', None),
+                'size' : json.loads(request.text).get('totalElements', None),
+                'id' : self.data['id']
+            }
+    
+    def read(self, name=True, id=True, size=True) -> dict:
+        result ={}
+        if name:
+            result['name'] = self.data.get('name', None)
+        if id:
+            result['id'] = self.data.get('id', None)
+        
+        if size:
+            result['size'] = self.data.get('size', None)
+        
+        return result
+    
+    def is_empty(self) -> bool:
+        return self.data.get('id') is None
+        
+
 #Header
 ECAC_header = authHeader('Authorization')
 fortnite_header = authHeader('Authorization')
-comp_id = compDetails()
+
+#Classed Variables
+comp_details = compDetails()
 
 #URLs
 contacts_url = "https://api.ecac.gg/competition/entry/{}/_view/contact-accounts"
-comp_url = "https://api.ecac.gg/competition/entry/document?competitionId={}&page=0&size=1000&sort=seed" 
+comp_url = "https://api.ecac.gg/competition/entry/document?competitionId={}&page=0&size={}&sort=seed" 
 team_info_url = "https://api.ecac.gg/competition/entry/{}" 
 fortnite_api_url = "https://fortnite-api.com/v2/stats/br/v2/"
 
-comp_id= None
 network = None
+
 #Util
 def is_empty(var: any) -> bool:
     return var == None
 
 #Set Vars
-def set_comp_id(id: int) -> None:
-    global comp_id ; comp_id =  id
-
 def set_game_network(networkIn: str) -> None:
     global network; network = networkIn
-
 
 #Funcs for Data
 def get_team_name(team_id: int) -> str:
     return json.loads(web.get(team_info_url.format(team_id)).text).get('alternateName', f'{team_id}')      
     
 def grab_comp_json() -> dict:
-    if is_empty(comp_id):
+    if comp_details.is_empty():
         raise CustomError('Competition ID is Empty')
 
-    request = web.get(comp_url.format(comp_id))
+    request = web.get(comp_url.format(comp_details.read(name=False, size=False)['id'], 1000))
 
     if request.status_code != 200:
+        print(request.text)
         raise CustomError(f'Request Error: {request.status_code}')
 
     if json.dumps(request.text) == {}:
@@ -107,7 +134,6 @@ def process_contact_info_func(team_json: list, team_list_pos: int, team_id_list:
     temp_dict = json.loads(team_json)
     user_id_list = []
     user_contacts = []
-    team_dict = {}
     if temp_dict != {}:
         for contacts in temp_dict['content']:
             user_id_list.append(contacts['user']['id'])
