@@ -2,7 +2,6 @@ import requests as web
 from tqdm import tqdm
 import json
 
-
 class authHeader:
     def __init__(self, headerTitle) -> None:
         self.header = {headerTitle : None}
@@ -72,6 +71,7 @@ class compDetails:
 #Header
 ECAC_header = authHeader('Authorization')
 fortnite_header = authHeader('Authorization')
+ECAC_cookie = authHeader('GAESA')
 
 #Classed Variables
 comp_details = compDetails()
@@ -158,7 +158,7 @@ def get_team_contacts(teamIDS: list) -> list:
         team_contacts.append(request.text)
     return team_contacts
 
-def process_contact_info_func(team_json: list, team_list_pos: int, team_id_list: list) -> list:
+def process_contact_info_func(team_json: list) -> list:
     temp_dict = json.loads(team_json)
     user_id_list = []
     user_contacts = []
@@ -184,19 +184,14 @@ def process_contact_info_func(team_json: list, team_list_pos: int, team_id_list:
                     elif contacts['network'] == 'DISCORD':
                         user_dict['discord'] = contacts['handle']
             user_contacts.append(user_dict)
-        #team_dict[get_team_name(team_id_list[team_list_pos])] = user_contacts
-        #return team_dict
         return user_contacts
     else:
         user_dict = {'game_network_username' : 'Empty Team', 'discord' : 'Empty Team'}
         user_contacts.append(user_dict)
         return user_contacts
 
-def process_contact_info(teams_contacts: list, team_id_list: list) -> list:
+def process_contact_info(teams_contacts: list, team_id_list: list)-> list:
     temp_dict = {}
-    for x in tqdm(teams_contacts, total= len(teams_contacts), desc= 'Processing Teams'):
-        temp_dict[get_team_name(team_id_list[teams_contacts.index(x)])] = process_contact_info_func(x, teams_contacts.index(x), team_id_list)
+    for team_list in tqdm(teams_contacts, total= len(teams_contacts), desc= 'Processing Teams'):
+        temp_dict[get_team_name(team_id_list[teams_contacts.index(team_list)])] = process_contact_info_func(team_list)
     return temp_dict
-
-
-#Fixe
