@@ -2,7 +2,6 @@ import requests as web
 from tqdm import tqdm
 import json
 
-
 class authHeader:
     def __init__(self, headerTitle) -> None:
         self.header = {headerTitle : None}
