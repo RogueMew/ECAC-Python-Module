@@ -2,15 +2,15 @@ import requests as web
 from tqdm import tqdm
 import json
 
-
-class authHeader:
+#Classes
+class header:
     def __init__(self, headerTitle) -> None:
         self.header = {headerTitle : None}
         self.headerTitle = headerTitle 
         pass
     
-    def set(self, authToken) -> None:
-        self.header = {self.headerTitle : authToken}
+    def set(self, headerValue) -> None:
+        self.header = {self.headerTitle : headerValue}
         pass
     
     def read(self) -> dict:
@@ -68,10 +68,45 @@ class compDetails:
             raise CustomError(f'{param} is Not in List of Acceptable Parameters: {list(self.data.keys())}')
         return self.data.get(param) is None
 
+class matchData:
+    
+    def __init__(self, team_name) -> None:
+        self.header = header('expand')
+        self.header.set('_links,activeChannel,bracket{settings,competition},assignments{entry{leader,_links,representing{additionalOrganizations,profile}}},event,games,channel')
+        self.name = team_name
+        self.url = 'https://api.ecac.gg/competition/bracket/match/{}'
+        pass
+
+    def set_match_id(self, id: int) -> None:
+        self.match_id = id
+        pass
+
+    def scrape(self) -> str:
+        request = web.get(self.url.format(self.match_id), headers=self.header.read())
+        
+        if request.status_code != 200:
+            raise CustomError(f'Web Error Code: {request.status_code}')
+        
+        self.request_text = request.text
+        return self.request_text
+    
+    def parse(self) -> dict:
+        request_json = json.loads(self.request_text)
+        bracketIDS =[]
+        schoolIds = {'bracketID' : None,'entryID' : None}
+        for bracketAssign in request_json['_expanded']['bracketAssignment']:
+            temp = {bracketAssign['id'] : bracketAssign['entry']['id']}
+            bracketIDS.append(temp)
+        for entry in request_json['_expanded']['competitionEntry']:
+            if self.name in entry['alternateName']:
+                for id in bracketIDS:
+                    if list(id.values())[0] == entry['id']:
+                        schoolIds['bracketID'] = list(id.keys())[0]
+                        schoolIds['entryID'] = list(id.values())[0]
+        return schoolIds
 
 #Header
-ECAC_header = authHeader('Authorization')
-fortnite_header = authHeader('Authorization')
+ECAC_API_header = header('Authorization')
 
 #Classed Variables
 comp_details = compDetails()
@@ -81,7 +116,6 @@ contacts_url = "https://api.ecac.gg/competition/entry/{}/_view/contact-accounts"
 comp_url = "https://api.ecac.gg/competition/entry/document?competitionId={}&page=0&size={}&sort=seed"
 bracket_url = 'https://api.ecac.gg/competition/entry/document?competitionId={}&brackets={}&page=0&size=2000'
 team_info_url = "https://api.ecac.gg/competition/entry/{}" 
-fortnite_api_url = "https://fortnite-api.com/v2/stats/br/v2/"
 
 network = None
 
@@ -144,12 +178,12 @@ def scrape_team_ids(comp_contents:dict) -> list:
     return team_id_list
 
 def get_team_contacts(teamIDS: list) -> list:
-    if ECAC_header.is_empty():
+    if ECAC_API_header.is_empty():
         raise CustomError('ECAC Header is not Set')
 
     team_contacts = []
     for id in tqdm(teamIDS, total=len(teamIDS), desc='Scraping Team Contacts Page'):
-        request = web.get(contacts_url.format(id), headers=ECAC_header.read())
+        request = web.get(contacts_url.format(id), headers=ECAC_API_header.read())
         if request.status_code != 200:
             if request.status_code == 401:
                 raise CustomError('Request Header Needs Updating')
@@ -197,6 +231,3 @@ def process_contact_info(teams_contacts: list, team_id_list: list) -> list:
     for x in tqdm(teams_contacts, total= len(teams_contacts), desc= 'Processing Teams'):
         temp_dict[get_team_name(team_id_list[teams_contacts.index(x)])] = process_contact_info_func(x, teams_contacts.index(x), team_id_list)
     return temp_dict
-
-
-#Fixe
