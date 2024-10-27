@@ -33,6 +33,7 @@ class compDetails:
             'id' : None,
             'size' : None
         }
+        self.url = 'https://api.ecac.gg/competition/{}'
         pass
 
     def set_id(self, id) -> None:
@@ -40,7 +41,7 @@ class compDetails:
         pass
     
     def scrape_details(self) -> None:
-        request = web.get(comp_url.format(self.data['id'], 1))
+        request = web.get(self.url.format(self.data['id'], 1))
         if request.status_code != 200:
             raise CustomError(f'Error Communicating with Server, Error Code: {request.status_code} ')
        
@@ -70,11 +71,11 @@ class compDetails:
 
 class matchData:
     
-    def __init__(self, team_name) -> None:
+    def __init__(self, team_id) -> None:
         self.header = header('expand')
         self.header.set('_links,activeChannel,bracket{settings,competition},assignments{entry{leader,_links,representing{additionalOrganizations,profile}}},event,games,channel')
-        self.name = team_name
         self.url = 'https://api.ecac.gg/competition/bracket/match/{}'
+        self.team_id = team_id
         pass
 
     def set_match_id(self, id: int) -> None:
@@ -87,23 +88,39 @@ class matchData:
         if request.status_code != 200:
             raise CustomError(f'Web Error Code: {request.status_code}')
         
-        self.request_text = request.text
-        return self.request_text
+        return request.text
     
-    def parse(self) -> dict:
-        request_json = json.loads(self.request_text)
+    def id_finder(self) -> str:
+        request_json = json.loads(self.scrape())
         bracketIDS =[]
-        schoolIds = {'bracketID' : None,'entryID' : None}
+        
         for bracketAssign in request_json['_expanded']['bracketAssignment']:
             temp = {bracketAssign['id'] : bracketAssign['entry']['id']}
             bracketIDS.append(temp)
-        for entry in request_json['_expanded']['competitionEntry']:
-            if self.name in entry['alternateName']:
-                for id in bracketIDS:
-                    if list(id.values())[0] == entry['id']:
-                        schoolIds['bracketID'] = list(id.keys())[0]
-                        schoolIds['entryID'] = list(id.values())[0]
-        return schoolIds
+
+        for id in bracketIDS:
+                if list(id.values())[0] == self.team_id:
+                    self.team_match_id = list(id.keys())[0]
+        
+        return self.team_match_id
+    
+    def print_match_results(self) -> None:
+        self.id_finder()
+        data = json.loads(self.scrape())
+        if data['_expanded'].get('matchGame', None) == None:
+            print('Game Not Played Yet')
+            return
+        if data['winner']['id'] != self.team_match_id:
+            print('Lost Overall')
+        else:
+            print('Won Overall')
+        
+        for game in data['_expanded']['matchGame']:
+            if game['winner']['id'] == self.team_match_id:
+                print(f"Won Game: {max(game['scores'])} - {min(game['scores'])}")
+            else:
+                print(f"Lost Game: {min(game['scores'])} - {max(game['scores'])}")
+
 
 #Header
 ECAC_API_header = header('Authorization')
@@ -113,9 +130,10 @@ comp_details = compDetails()
 
 #URLs
 contacts_url = "https://api.ecac.gg/competition/entry/{}/_view/contact-accounts"
-comp_url = "https://api.ecac.gg/competition/entry/document?competitionId={}&page=0&size={}&sort=seed"
+comp_url = "https://api.ecac.gg/competition/entry/document?competitionId={}&page=0&size=1000&sort=seed"
 bracket_url = 'https://api.ecac.gg/competition/entry/document?competitionId={}&brackets={}&page=0&size=2000'
 team_info_url = "https://api.ecac.gg/competition/entry/{}" 
+match_data_url = 'https://api.ecac.gg/competition/{}/_view/matches?entry={}&page=0'
 
 network = None
 
@@ -135,7 +153,7 @@ def grab_comp_json() -> dict:
     if comp_details.is_empty():
         raise CustomError('Competition ID is Empty')
 
-    request = web.get(comp_url.format(comp_details.read(name=False, size=False)['id'], 1000))
+    request = web.get(comp_url.format(comp_details.read(name=False, size=False)['id']))
 
     if request.status_code != 200:
         raise CustomError(f'Request Error: {request.status_code}')
@@ -219,6 +237,7 @@ def process_contact_info_func(team_json: list) -> list:
                         user_dict['discord'] = contacts['handle']
             user_contacts.append(user_dict)
         return user_contacts
+    
     else:
         user_dict = {'game_network_username' : 'Empty Team', 'discord' : 'Empty Team'}
         user_contacts.append(user_dict)
@@ -229,3 +248,20 @@ def process_contact_info(teams_contacts: list, team_id_list: list)-> list:
     for x in tqdm(teams_contacts, total= len(teams_contacts), desc= 'Processing Teams'):
         temp_dict[get_team_name(team_id_list[teams_contacts.index(x)])] = process_contact_info_func(x, teams_contacts.index(x), team_id_list)
     return temp_dict
+
+# Grab Match Ids
+def team_match_ids(team_id: int) -> list:
+    
+    returned_list = []
+
+    expandHeader = header('expand')
+    expandHeader.set('_links,totalElements,content{bracket{settings},event,games,assignments{entry{leader,representing{additionalOrganizations}}}}')
+    request = web.get(match_data_url.format(comp_details.read(name=False,size=False)['id'], team_id), headers=expandHeader.read())
+    
+    if request.status_code != 200:
+        raise CustomError(f'Web Status Code: {request.status_code}')
+    
+    
+    for item in request.json()['content']:
+        returned_list.append(item['id'])
+    return returned_list
