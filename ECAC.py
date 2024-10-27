@@ -192,7 +192,7 @@ def get_team_contacts(teamIDS: list) -> list:
         team_contacts.append(request.text)
     return team_contacts
 
-def process_contact_info_func(team_json: list, team_list_pos: int, team_id_list: list) -> list:
+def process_contact_info_func(team_json: list) -> list:
     temp_dict = json.loads(team_json)
     user_id_list = []
     user_contacts = []
@@ -218,15 +218,13 @@ def process_contact_info_func(team_json: list, team_list_pos: int, team_id_list:
                     elif contacts['network'] == 'DISCORD':
                         user_dict['discord'] = contacts['handle']
             user_contacts.append(user_dict)
-        #team_dict[get_team_name(team_id_list[team_list_pos])] = user_contacts
-        #return team_dict
         return user_contacts
     else:
         user_dict = {'game_network_username' : 'Empty Team', 'discord' : 'Empty Team'}
         user_contacts.append(user_dict)
         return user_contacts
 
-def process_contact_info(teams_contacts: list, team_id_list: list) -> list:
+def process_contact_info(teams_contacts: list, team_id_list: list)-> list:
     temp_dict = {}
     for x in tqdm(teams_contacts, total= len(teams_contacts), desc= 'Processing Teams'):
         temp_dict[get_team_name(team_id_list[teams_contacts.index(x)])] = process_contact_info_func(x, teams_contacts.index(x), team_id_list)
