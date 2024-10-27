@@ -4,22 +4,52 @@ import json
 
 #Classes
 class header:
+    """
+    Manages single header settings allowing easy configuration and retrieval
+    """
     def __init__(self, headerTitle) -> None:
+        """
+        Creates Header Object with the Header Key Value as a Param
+
+        Parameters:
+            headerTitle (any): Header Key Value
+        """
         self.header = {headerTitle : None}
         self.headerTitle = headerTitle 
         pass
     
     def set(self, headerValue) -> None:
+        """
+        Sets the Header Value as the input of this Function
+
+        Parameters:
+            headerValue (any): Value of the Header Key
+        """
         self.header = {self.headerTitle : headerValue}
         pass
     
     def read(self) -> dict:
+        """
+        Returns a Dictionary of the Header
+        
+        Returns:
+            dict: Header Values
+        """
         return self.header
 
     def is_empty(self) -> bool:
-        return self.header[self.headerTitle] == None
+        """
+        Returns a Boolean indicating if the header is Not set.
+        
+        Returns:
+            bool: True if the variable is None, False otherwise.
+        """
+        return self.header.get('headerTitle') is None
 
 class CustomError(Exception):
+    """
+    Custom Error Message Class Allowing for Custom Errors
+    """
     def __init__(self, message):
         self.message = message
 
@@ -27,7 +57,17 @@ class CustomError(Exception):
         return f"{self.message}"
 
 class compDetails:
+    """
+    Class that handles the competition Values Such as Name, Id, and Size
+    """
     def __init__(self) -> None:
+        """
+        Initializes a new instance of the compDetails class
+
+        Attributes:
+            data (dict): Dictionary that stores all the data pertaining to the Name, Id, and Size of a Competition
+            url (str): String that contains the URL that is called to make requests
+        """
         self.data = {
             'name' : None,
             'id' : None,
@@ -36,11 +76,45 @@ class compDetails:
         self.url = 'https://api.ecac.gg/competition/{}'
         pass
 
-    def set_id(self, id) -> None:
+    def set_id(self, id: int) -> None:
+        """
+        Sets the Id of the object
+        
+        Parameters:
+            id (int): Id of the competition
+        """
+
         self.data['id'] = id
         pass
     
+    def is_empty(self, data_point: str='id') -> bool:
+        """
+        Checks to see if specified data point is empty(i.e., None)
+
+        Parameters:
+            data_point (str, optional):
+                The key in the dictionary that is being checked.
+                Defaults to 'id' if not provided
+
+        Returns:
+            bool: True if the variable is None, False otherwise.
+
+        Raises:
+            CustomError: If `data_point` is not a valid key in the data dictionary.
+        """
+        if data_point not in list(self.data.keys()):
+            raise CustomError(f'{data_point} is Not in List of Acceptable Parameters: {list(self.data.keys())}')
+        return self.data.get(data_point) is None
+    
     def scrape_details(self) -> None:
+        """
+        Scrapes the Competitions API Endpoint and Pulls Data such as Name and Size
+        
+        Raises:
+            CustomError: If the competition ID is not set or if there is an error communicating with the server.
+        """
+        if self.is_empty():
+            raise CustomError('Id is not Set and is a Needed for Any Requests')
         request = web.get(self.url.format(self.data['id'], 1))
         if request.status_code != 200:
             raise CustomError(f'Error Communicating with Server, Error Code: {request.status_code} ')
@@ -52,7 +126,18 @@ class compDetails:
                 'id' : self.data['id']
             }
     
-    def read(self, name=True, id=True, size=True) -> dict:
+    def read(self, name: bool=True, id: bool=True, size: bool=True) -> dict:
+        """
+        Retrieves the competition data as a dictionary, with options to include or exclude specific details.
+
+        Parameters:
+            name (bool, optional): If `True`, includes the competition name in the result. Defaults to `True`.
+            id (bool, optional): If `True`, includes the competition ID in the result. Defaults to `True`.
+            size (bool, optional): If `True`, includes the competition size in the result. Defaults to `True`.
+
+        Returns:
+            dict: A dictionary containing the selected competition data. Keys will be 'name', 'id', and/or 'size', based on the parameters.
+        """
         result ={}
         if name:
             result['name'] = self.data.get('name', None)
@@ -63,15 +148,21 @@ class compDetails:
             result['size'] = self.data.get('size', None)
         
         return result
-    
-    def is_empty(self, param='id') -> bool:
-        if param not in list(self.data.keys()):
-            raise CustomError(f'{param} is Not in List of Acceptable Parameters: {list(self.data.keys())}')
-        return self.data.get(param) is None
 
 class matchData:
     
     def __init__(self, team_id) -> None:
+        """
+        Initializes a new instance of the matchData class.
+
+        Parameters:
+            team_id (int): The ID of the team for which match data will be retrieved.
+
+        Attributes:
+            header (header): An instance of the `header` class, set up with the 'expand' value to include specific match details when making requests.
+            url (str): The base URL used to fetch match data from the ECAC API.
+            team_id (int): The ID of the team for which match data will be associated.
+        """
         self.header = header('expand')
         self.header.set('_links,activeChannel,bracket{settings,competition},assignments{entry{leader,_links,representing{additionalOrganizations,profile}}},event,games,channel')
         self.url = 'https://api.ecac.gg/competition/bracket/match/{}'
@@ -139,17 +230,52 @@ network = None
 
 #Util
 def is_empty(var: any) -> bool:
-    return var == None
+    """
+    Returns a Boolean indicating if the variable is None.
+    
+    Parameters:
+        var (any): The variable to check.
+    
+    Returns:
+        bool: True if the variable is None, False otherwise.
+    """
+    return var  is None
 
-#Set Vars
 def set_game_network(networkIn: str) -> None:
+    """
+    Sets a Global Variable to the networkIn Param
+
+    Parameters:
+    networkIn (str): Name of the Network in Full Caps
+    
+    Returns: 
+    None
+    """
     global network; network = networkIn
 
 #Competition Functions
 def get_team_name(team_id: int) -> str:
+    """
+    Returns a string of the Team Name based off Team Id
+
+    Parameters:
+    team_id (int): Team Id
+
+    Returns:
+    str: Team Name
+    """
     return json.loads(web.get(team_info_url.format(team_id)).text).get('alternateName', f'{team_id}')      
     
 def grab_comp_json() -> dict:
+    """
+    Returns the JSON of the Competition Site
+
+    Parameters:
+    None
+
+    Returns:
+    dict: 
+    """
     if comp_details.is_empty():
         raise CustomError('Competition ID is Empty')
 
