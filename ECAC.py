@@ -7,6 +7,7 @@ class header:
     """
     Manages single header settings allowing easy configuration and retrieval
     """
+    
     def __init__(self, headerTitle) -> None:
         """
         Creates Header Object with the Header Key Value as a Param
@@ -14,6 +15,7 @@ class header:
         Parameters:
             headerTitle (any): Header Key Value
         """
+        
         self.header = {headerTitle : None}
         self.headerTitle = headerTitle 
         pass
@@ -25,6 +27,7 @@ class header:
         Parameters:
             headerValue (any): Value of the Header Key
         """
+        
         self.header = {self.headerTitle : headerValue}
         pass
     
@@ -35,6 +38,7 @@ class header:
         Returns:
             dict: Header Values
         """
+        
         return self.header
 
     def is_empty(self) -> bool:
@@ -44,12 +48,14 @@ class header:
         Returns:
             bool: True if the variable is None, False otherwise.
         """
+        
         return self.header.get('headerTitle') is None
 
 class CustomError(Exception):
     """
     Custom Error Message Class Allowing for Custom Errors
     """
+    
     def __init__(self, message):
         self.message = message
 
@@ -60,6 +66,7 @@ class compDetails:
     """
     Class that handles the competition Values Such as Name, Id, and Size
     """
+    
     def __init__(self) -> None:
         """
         Initializes a new instance of the compDetails class
@@ -68,6 +75,7 @@ class compDetails:
             data (dict): Dictionary that stores all the data pertaining to the Name, Id, and Size of a Competition
             url (str): String that contains the URL that is called to make requests
         """
+       
         self.data = {
             'name' : None,
             'id' : None,
@@ -102,6 +110,7 @@ class compDetails:
         Raises:
             CustomError: If `data_point` is not a valid key in the data dictionary.
         """
+        
         if data_point not in list(self.data.keys()):
             raise CustomError(f'{data_point} is Not in List of Acceptable Parameters: {list(self.data.keys())}')
         return self.data.get(data_point) is None
@@ -113,6 +122,7 @@ class compDetails:
         Raises:
             CustomError: If the competition ID is not set or if there is an error communicating with the server.
         """
+        
         if self.is_empty():
             raise CustomError('Id is not Set and is a Needed for Any Requests')
         request = web.get(self.url.format(self.data['id'], 1))
@@ -138,6 +148,7 @@ class compDetails:
         Returns:
             dict: A dictionary containing the selected competition data. Keys will be 'name', 'id', and/or 'size', based on the parameters.
         """
+        
         result ={}
         if name:
             result['name'] = self.data.get('name', None)
@@ -150,30 +161,45 @@ class compDetails:
         return result
 
 class matchData:
+    """
+    Class that handles match data
+    """
     
-    def __init__(self, team_id) -> None:
+    def __init__(self, team_id: int,match_id: int) -> None:
         """
         Initializes a new instance of the matchData class.
 
         Parameters:
-            team_id (int): The ID of the team for which match data will be retrieved.
+            team_id (int): The Id of the team for which the match data is from
+            match_id (int): The Id of the match for which match data will be retrieved.
 
         Attributes:
             header (header): An instance of the `header` class, set up with the 'expand' value to include specific match details when making requests.
             url (str): The base URL used to fetch match data from the ECAC API.
-            team_id (int): The ID of the team for which match data will be associated.
+            match_id (int): The Id of the match for which match data will be associated.
+            team_id (int): The Id of the team for which match data will be associated
+            team_match_id (int): The match id for the team that is inputted for team Id 
         """
+    
         self.header = header('expand')
         self.header.set('_links,activeChannel,bracket{settings,competition},assignments{entry{leader,_links,representing{additionalOrganizations,profile}}},event,games,channel')
         self.url = 'https://api.ecac.gg/competition/bracket/match/{}'
+        self.match_id = match_id
         self.team_id = team_id
-        pass
-
-    def set_match_id(self, id: int) -> None:
-        self.match_id = id
+        self.team_match_id = None
         pass
 
     def scrape(self) -> str:
+        """
+        Scrapes the API endpoint responsible for the Match Data
+
+        Returns:
+            str: The JSON of the API is returned as a string 
+        
+        Raises:
+            CustomError: If there is an error communicating with the server.
+        """
+    
         request = web.get(self.url.format(self.match_id), headers=self.header.read())
         
         if request.status_code != 200:
@@ -182,25 +208,40 @@ class matchData:
         return request.text
     
     def id_finder(self) -> str:
+        """
+        Parses the Match Data to get the inputted teams Match ID
+
+        Returns:
+            str: The match Id as a string
+        """
+    
         request_json = json.loads(self.scrape())
         bracketIDS =[]
         
         for bracketAssign in request_json['_expanded']['bracketAssignment']:
             temp = {bracketAssign['id'] : bracketAssign['entry']['id']}
             bracketIDS.append(temp)
-
         for id in bracketIDS:
                 if list(id.values())[0] == self.team_id:
                     self.team_match_id = list(id.keys())[0]
-        
+
         return self.team_match_id
     
     def print_match_results(self) -> None:
+        """
+        (BETA) Function to parse data and print it 
+        """
+    
         self.id_finder()
         data = json.loads(self.scrape())
-        if data['_expanded'].get('matchGame', None) == None:
+        
+        if data['state'] == 'OPEN':
             print('Game Not Played Yet')
             return
+        if data.get('winner', None) == None:
+            print('Game Ended in a Tie')
+            return
+        
         if data['winner']['id'] != self.team_match_id:
             print('Lost Overall')
         else:
@@ -210,8 +251,72 @@ class matchData:
             if game['winner']['id'] == self.team_match_id:
                 print(f"Won Game: {max(game['scores'])} - {min(game['scores'])}")
             else:
-                print(f"Lost Game: {min(game['scores'])} - {max(game['scores'])}")
+                print(f"Lost Game: {min(game['scores'])} - {max(game['scores'])}")    
+            
+    def parse(self) -> dict:
+        """
+        (BETA) Parses the match data and returns important info about the match
 
+        Returns:
+            dict: Returns match data as a Dictionary 
+        """
+    
+        data = json.loads(self.scrape())
+
+        match_details = {}
+        opponent = {}
+        
+        match_details['date'] = data.get('startDate', None)
+        match_details['comp_name'] = data['_expanded']['competition'][0]['name']
+
+        for team in data['_expanded']['competitionEntry']:
+            if team['id'] != self.team_id:
+                opponent['team_id'] = team['id']
+                opponent['name'] = team['alternateName']
+
+        for team in data['_expanded']['bracketAssignment']:
+            if team['entry']['id'] == opponent['team_id']:
+                opponent['match_id'] = team['entry']['id']
+
+        match_details['opponent'] = opponent
+
+        home_team = {}
+
+        for team in data['_expanded']['competitionEntry']:
+            if team['id'] == self.team_id:
+                home_team['team_id'] = team['id']
+                home_team['name'] = team['alternateName']
+
+        for team in data['_expanded']['bracketAssignment']:
+            if team['entry']['id'] == self.team_id:
+                home_team['match_id'] = team['entry']['id']
+        
+        match_details['home_team'] = home_team
+
+        games = []
+
+        if data['state'] == 'OPEN' or 'matchGame' not in data['_expanded'].keys():
+            games = ["not_played"]
+        else:
+            for game in data['_expanded']['matchGame']:
+                temp_game = {}
+                
+                temp_game['game_number'] = game['ordinal']
+                temp_game['scores'] = game['scores']
+                
+                if game.get('winner', None) is None:
+                        temp_game['winner'] = 'Not Defined'
+                else:    
+                    if game['winner']['id'] != self.team_match_id:
+                        temp_game['winner'] = opponent['name']
+                    else:
+                        temp_game['winner'] = home_team['name']
+                
+                games.append(temp_game)
+
+        match_details['games'] = games
+
+        return match_details 
 
 #Header
 ECAC_API_header = header('Authorization')
@@ -239,7 +344,8 @@ def is_empty(var: any) -> bool:
     Returns:
         bool: True if the variable is None, False otherwise.
     """
-    return var  is None
+    
+    return var is None
 
 def set_game_network(networkIn: str) -> None:
     """
@@ -251,6 +357,7 @@ def set_game_network(networkIn: str) -> None:
     Returns: 
     None
     """
+    
     global network; network = networkIn
 
 #Competition Functions
@@ -266,16 +373,17 @@ def get_team_name(team_id: int) -> str:
     """
     return json.loads(web.get(team_info_url.format(team_id)).text).get('alternateName', f'{team_id}')      
     
-def grab_comp_json() -> dict:
+def grab_comp_dict() -> dict:
     """
-    Returns the JSON of the Competition Site
-
-    Parameters:
-    None
+    Returns the API response for the selected competion based off Id
 
     Returns:
-    dict: 
+        dict: The competitions data as a python dictionary
+    
+    Raises:
+        CustomError: When their is a Network Error or the competition site is empty
     """
+    
     if comp_details.is_empty():
         raise CustomError('Competition ID is Empty')
 
@@ -290,10 +398,23 @@ def grab_comp_json() -> dict:
     return json.loads(request.text)
 
 #Bracket Functions
-def grab_bracket_json(bracket_id: int) -> dict:
+def grab_bracket_dict(bracket_id: int) -> dict:
+    """
+    Returns the API response for the selected bracket based off Id
+
+    Parameters:
+        bracket_id (int): Bracket Id 
+
+    Returns:
+        dict: Bracket data as a python dict
+    
+    Raises:
+        CustomError: When their is a Network Error or the competition site is empty
+    """
+    
     if comp_details.is_empty():
         raise CustomError('Competition ID is not Set')
-    request = web.get(bracket_url.format( comp_details.read(name=False, size=False)['id'], bracket_id))
+    request = web.get(bracket_url.format(comp_details.read(name=False, size=False)['id'], bracket_id))
 
     if request.status_code != 200:
         raise CustomError(f'Request Error: {request.status_code}')
@@ -303,17 +424,41 @@ def grab_bracket_json(bracket_id: int) -> dict:
     
     return json.loads(request.text)
     
-def scrape_team_ids_bracket(bracket_contents: dict) -> list:
+def scrape_team_ids_bracket(bracket_id: int) -> list:
+    """
+    Parses the bracket data and returns the team ids
+
+    Parameters:
+        bracket_id (int): Bracket Id
+
+    Returns:
+        list: A List containing team ids
+
+    Raises:
+        CustomError: If a vital key in the JSON is missing the program will raise an error
+    """
+    
+    bracket_contents = grab_bracket_dict(bracket_id)
     team_id_list = []
     if 'content' not in list(bracket_contents.keys()):
         raise CustomError('Missing Data')
     for team in bracket_contents['content']:
-        
         team_id_list.append(team['id'])
     return team_id_list
 
 #Gather and Scrape Funcs   
-def scrape_team_ids(comp_contents:dict) -> list:
+def scrape_team_ids() -> list:
+    """
+    Parses the competition data and returns the team ids
+    
+    Returns:
+        list: Team Ids as a list    
+    
+    Raises:
+        CustomError: If a Vital key is missing in the JSON
+    """
+    
+    comp_contents = grab_comp_dict()
     team_id_list = []
     if 'content' not in list(comp_contents.keys()):
         raise CustomError('Missing Data')
@@ -322,6 +467,18 @@ def scrape_team_ids(comp_contents:dict) -> list:
     return team_id_list
 
 def get_team_contacts(teamIDS: list) -> list:
+    """
+    Scrapes the contact info of a team and returns all data in a list to be parsed
+
+    Parameters:
+        teamIDS (list): A list of team Ids
+    Returns:
+        list: Team contact info
+    
+    Raises:
+        CustomError: If Header is empty, needs updating or Error incommunication with api
+    """
+    
     if ECAC_API_header.is_empty():
         raise CustomError('ECAC Header is not Set')
 
@@ -332,11 +489,15 @@ def get_team_contacts(teamIDS: list) -> list:
             if request.status_code == 401:
                 raise CustomError('Request Header Needs Updating')
             else:
-                raise CustomError(f'Error in Cimmunication with Server, Web Error Code {request.status_code}')
+                raise CustomError(f'Error in Communication with API, Web Error Code {request.status_code}')
         team_contacts.append(request.text)
     return team_contacts
 
 def process_contact_info_func(team_json: list) -> list:
+    """
+    Mini process Function
+    """
+    
     temp_dict = json.loads(team_json)
     user_id_list = []
     user_contacts = []
@@ -369,25 +530,51 @@ def process_contact_info_func(team_json: list) -> list:
         user_contacts.append(user_dict)
         return user_contacts
 
-def process_contact_info(teams_contacts: list, team_id_list: list)-> list:
+def process_contact_info(team_id_list: list) -> dict:
+    """
+    Parses the contact info and returns all info as a dictionary
+
+    Parameters:
+        team_id_list (list): A list of team Ids that correspond with the teams in the contact info list
+
+    Returns:
+        dict: Team contacts all orderly fashioned and stored by school name as key value
+    """
+    
     temp_dict = {}
+    teams_contacts = get_team_contacts(team_id_list)
+    
     for x in tqdm(teams_contacts, total= len(teams_contacts), desc= 'Processing Teams'):
         temp_dict[get_team_name(team_id_list[teams_contacts.index(x)])] = process_contact_info_func(x, teams_contacts.index(x), team_id_list)
     return temp_dict
 
 # Grab Match Ids
 def team_match_ids(team_id: int) -> list:
+    """
+    Scrapes the matches that are located on the teams page
+
+    Parameters:
+        team_id (int): Team Id
+    
+    Returns:
+        list: list of match Ids
+    
+    Raises:
+        CustomError: if there is an issue connecting to API
+    """
     
     returned_list = []
 
     expandHeader = header('expand')
     expandHeader.set('_links,totalElements,content{bracket{settings},event,games,assignments{entry{leader,representing{additionalOrganizations}}}}')
     request = web.get(match_data_url.format(comp_details.read(name=False,size=False)['id'], team_id), headers=expandHeader.read())
-    
+
     if request.status_code != 200:
         raise CustomError(f'Web Status Code: {request.status_code}')
-    
+    if request.json().get('content', None) == None:
+        return returned_list
     
     for item in request.json()['content']:
         returned_list.append(item['id'])
+    
     return returned_list
