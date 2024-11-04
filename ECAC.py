@@ -49,7 +49,7 @@ class header:
             bool: True if the variable is None, False otherwise.
         """
         
-        return self.header.get('headerTitle') is None
+        return self.header.get(self.headerTitle) is None
 
 class CustomError(Exception):
     """
@@ -319,7 +319,7 @@ class matchData:
         return match_details 
 
 #Header
-ECAC_API_header = header('Authorization')
+ECAC_API_header = header('authorization')
 
 #Classed Variables
 comp_details = compDetails()
@@ -544,8 +544,8 @@ def process_contact_info(team_id_list: list) -> dict:
     temp_dict = {}
     teams_contacts = get_team_contacts(team_id_list)
     
-    for x in tqdm(teams_contacts, total= len(teams_contacts), desc= 'Processing Teams'):
-        temp_dict[get_team_name(team_id_list[teams_contacts.index(x)])] = process_contact_info_func(x, teams_contacts.index(x), team_id_list)
+    for team in tqdm(teams_contacts, total= len(teams_contacts), desc= 'Processing Teams'):
+        temp_dict[get_team_name(team_id_list[teams_contacts.index(team)])] = process_contact_info_func(team)
     return temp_dict
 
 # Grab Match Ids
