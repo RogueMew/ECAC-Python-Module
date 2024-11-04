@@ -330,6 +330,7 @@ comp_url = "https://api.ecac.gg/competition/entry/document?competitionId={}&page
 bracket_url = 'https://api.ecac.gg/competition/entry/document?competitionId={}&brackets={}&page=0&size=2000'
 team_info_url = "https://api.ecac.gg/competition/entry/{}" 
 match_data_url = 'https://api.ecac.gg/competition/{}/_view/matches?entry={}&page=0'
+competition_brackets_url ="https://api.ecac.gg/competition/{}/brackets"
 
 network = None
 
@@ -358,7 +359,7 @@ def get_team_name(team_id: int) -> str:
     Returns:
     str: Team Name
     """
-    
+
     return json.loads(web.get(team_info_url.format(team_id)).text).get('alternateName', f'{team_id}')      
     
 def grab_comp_dict() -> dict:
@@ -565,4 +566,27 @@ def team_match_ids(team_id: int) -> list:
     for item in request.json()['content']:
         returned_list.append(item['id'])
     
+    return returned_list
+
+def scrape_bracket_ids(competition_id: int) -> list:
+    """
+    Scrapes the bracket ids that are located in the competition page
+
+    Parameters:
+        competition_id (int): the Id of the competition in which the brackets are located
+    """
+
+    returned_list = []
+
+    request = web.get(competition_brackets_url.format(competition_id))
+
+    if request.status_code != 200:
+        raise CustomError(f"Error Connecting with API, Web Error: {request.status_code}")
+    
+    if 'content' not in list(json.loads(request.text).keys()):
+        raise CustomError(f"Missing Vital key for Data")
+    
+    for bracket in json.loads(request.text)['content']:
+        returned_list.append(bracket.get('id'))
+
     return returned_list
