@@ -347,19 +347,6 @@ def is_empty(var: any) -> bool:
     
     return var is None
 
-def set_game_network(networkIn: str) -> None:
-    """
-    Sets a Global Variable to the networkIn Param
-
-    Parameters:
-    networkIn (str): Name of the Network in Full Caps
-    
-    Returns: 
-    None
-    """
-    
-    global network; network = networkIn
-
 #Competition Functions
 def get_team_name(team_id: int) -> str:
     """
@@ -371,6 +358,7 @@ def get_team_name(team_id: int) -> str:
     Returns:
     str: Team Name
     """
+    
     return json.loads(web.get(team_info_url.format(team_id)).text).get('alternateName', f'{team_id}')      
     
 def grab_comp_dict() -> dict:
