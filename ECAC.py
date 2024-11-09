@@ -76,11 +76,7 @@ class compDetails:
             url (str): String that contains the URL that is called to make requests
         """
        
-        self.data = {
-            'name' : None,
-            'id' : None,
-            'size' : None
-        }
+        self.data = {}
         self.url = 'https://api.ecac.gg/competition/{}'
         pass
 
@@ -124,17 +120,13 @@ class compDetails:
         """
         
         if self.is_empty():
-            raise CustomError('Id is not Set and is a Needed for Any Requests')
+            raise CustomError('Id is not set and is a needed for any requests')
         request = web.get(self.url.format(self.data['id'], 1))
         if request.status_code != 200:
             raise CustomError(f'Error Communicating with Server, Error Code: {request.status_code} ')
        
-        if 'content' in list(json.loads(request.text).keys()):
-            self.data = {
-                'name' : json.loads(request.text)['content'][0]['competition'].get('name', None),
-                'size' : json.loads(request.text).get('totalElements', None),
-                'id' : self.data['id']
-            }
+        self.data['name'] = json.loads(request.text).get("name", None)
+        self.data['size'] = json.loads(request.text).get('totalElements', None)
     
     def read(self, name: bool=True, id: bool=True, size: bool=True) -> dict:
         """
