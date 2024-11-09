@@ -3,3 +3,4 @@ runner.py
 test.json
 temp.json
 /Test Data
+*.csv
