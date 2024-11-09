@@ -13,7 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 options = webdriver.EdgeOptions()
 options.add_experimental_option('excludeSwitches', ['enable-logging'])
 
-def scrapeRank(jsonData: dict, fileName: str)  -> None:
+def scrape_rank_individuals(jsonData: dict, fileName: str)  -> None:
   def removeUneeded(rankList: list) -> list:
     temp = [] 
     for word in rankList:
