@@ -472,7 +472,7 @@ def get_team_contacts(teamIDS: list) -> list:
         raise CustomError('ECAC Header is not Set')
 
     team_contacts = []
-    for id in tqdm(teamIDS, total=len(teamIDS), desc='Scraping Team Contacts Page'):
+    for id in tqdm(teamIDS, total=len(teamIDS), desc='Scraping Team Contacts Page', bar_format="{l_bar}{bar:30}{r_bar}"):
         request = web.get(contacts_url.format(id), headers=ECAC_API_header.read())
         if request.status_code != 200:
             if request.status_code == 401:
@@ -481,43 +481,6 @@ def get_team_contacts(teamIDS: list) -> list:
                 raise CustomError(f'Error in Communication with API, Web Error Code {request.status_code}')
         team_contacts.append(request.text)
     return team_contacts
-
-def process_contact_info_func(team_json: list) -> list:
-    """
-    Mini process Function
-    """
-    
-    temp_dict = json.loads(team_json)
-    user_id_list = []
-    user_contacts = []
-    if temp_dict != {}:
-        for contacts in temp_dict['content']:
-            user_id_list.append(contacts['user']['id'])
-
-        user_id_list = list(set(user_id_list))
-
-        for id in user_id_list:
-            user_dict = {
-                'id' : None,
-                'game_network_username': None,
-                'discord' : None
-            }
-            for contacts in temp_dict['content']:
-                if contacts['user']['id'] == id:
-                    user_dict['id'] = id
-                    if contacts['network'] == network:
-                        
-                        user_dict['game_network_username'] = contacts['handle']
-
-                    elif contacts['network'] == 'DISCORD':
-                        user_dict['discord'] = contacts['handle']
-            user_contacts.append(user_dict)
-        return user_contacts
-    
-    else:
-        user_dict = {'game_network_username' : 'Empty Team', 'discord' : 'Empty Team'}
-        user_contacts.append(user_dict)
-        return user_contacts
 
 def process_contact_info(team_id_list: list) -> dict:
     """
@@ -529,11 +492,47 @@ def process_contact_info(team_id_list: list) -> dict:
     Returns:
         dict: Team contacts all orderly fashioned and stored by school name as key value
     """
-    
+    def process_contact_info_func(team_json: list) -> list:
+        """
+        Mini process Function
+        """
+        
+        temp_dict = json.loads(team_json)
+        user_id_list = []
+        user_contacts = []
+        if temp_dict != {}:
+            for contacts in temp_dict['content']:
+                user_id_list.append(contacts['user']['id'])
+
+            user_id_list = list(set(user_id_list))
+
+            for id in user_id_list:
+                user_dict = {
+                    'id' : None,
+                    'game_network_username': None,
+                    'discord' : None
+                }
+                for contacts in temp_dict['content']:
+                    if contacts['user']['id'] == id:
+                        user_dict['id'] = id
+                        if contacts['network'] == network:
+                            
+                            user_dict['game_network_username'] = contacts['handle']
+
+                        elif contacts['network'] == 'DISCORD':
+                            user_dict['discord'] = contacts['handle']
+                user_contacts.append(user_dict)
+            return user_contacts
+        
+        else:
+            user_dict = {'game_network_username' : 'Empty Team', 'discord' : 'Empty Team'}
+            user_contacts.append(user_dict)
+            return user_contacts
+
     temp_dict = {}
     teams_contacts = get_team_contacts(team_id_list)
     
-    for team in tqdm(teams_contacts, total= len(teams_contacts), desc= 'Processing Teams'):
+    for team in tqdm(teams_contacts, total= len(teams_contacts), desc= 'Processing Teams           ', bar_format="{l_bar}{bar:30}{r_bar}"):
         temp_dict[get_team_name(team_id_list[teams_contacts.index(team)])] = process_contact_info_func(team)
     return temp_dict
 
