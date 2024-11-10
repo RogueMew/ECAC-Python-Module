@@ -34,7 +34,7 @@ def scrape_current_rank(jsonData: dict, fileName: str)  -> None:
     return temp
 
   def randomSleep() -> None:
-    time.sleep(random.randint(15, 20))
+    time.sleep(random.randint(5, 10))
   
   df = pandas.DataFrame(columns=["Username", "Ranked BR", "Ranked ZB", "Ranked Reload BR", "Ranked Reload ZB"])
   for school in tqdm(list(jsonData.keys()),desc="Scraping Ranks             ", bar_format="{l_bar}{bar:30}{r_bar}" ,total=len(list(jsonData.keys()))):
@@ -80,7 +80,7 @@ def scrape_peak_rank(jsonData: dict, fileName: str) -> None:
     return tempList
   
   def randomSleep() -> None:
-    time.sleep(random.randint(15, 20))
+    time.sleep(random.randint(5, 10))
 
   df = pandas.DataFrame(columns=["Username", "Ranked BR", "Ranked ZB"])
   for school in tqdm(list(jsonData.keys()), desc="Scraping Ranks             ", bar_format="{l_bar}{bar:30}{r_bar}", total=len(list(jsonData.keys()))):
@@ -139,7 +139,8 @@ def scrape_current_team_average(data:dict, fileName: str ="Ouput",mode: str="ZB"
     return temp
 
   def randomSleep() -> None:
-    time.sleep(random.randint(10, 15))
+    time.sleep(random.randint(5, 10))
+  
   df = pandas.DataFrame(columns=["School Name", "Average Rank"])
   for school in list(data.keys()):
     
