@@ -71,6 +71,7 @@ def scrape_current_rank(jsonData: dict, fileName: str)  -> None:
   df.to_csv(f"{fileName}.csv",encoding="utf-8", index=False, header=True)
 
 def scrape_peak_rank(jsonData: dict, fileName: str) -> None:
+
   def removeUneeded(rankList: list) -> list:
     tempList = []
     for word in rankList:
@@ -115,7 +116,7 @@ def scrape_peak_rank(jsonData: dict, fileName: str) -> None:
         continue
   df.to_csv(f"{fileName}.csv", sep="," ,encoding="utf-8", index=False, header=True)
 
-def scrape_current_team_average(data:dict, mode: str="ZB") -> None:
+def scrape_current_team_average(data:dict, fileName: str ="Ouput",mode: str="ZB") -> None:
   parameters = ["BR", "ZB", "RBR", "RZB"]
   
   
@@ -172,4 +173,65 @@ def scrape_current_team_average(data:dict, mode: str="ZB") -> None:
         continue    
     
     df.loc[len(df.index)] = [school, ranks[int(team_average / len(school))]]
-  df.to_csv("test.csv", header=True, index=False)
+  df.to_csv(f"{fileName}.csv", header=True, index=False)
+
+def scrape_peak_team_average(data:dict, fileName: str ="Ouput",mode: str="ZB") -> None:
+  parameters = ["BR", "ZB"]
+  
+  
+  if mode not in parameters:
+    raise CustomError(f"{mode} not a permitted parameter: {parameters}")
+  default_rank = "Gold 2"
+  ranks = ["Unrated", "Bronze 1", "Bronze 2", "Bronze 3", "Silver 1", "Silver 2", "Silver 3", "Gold 1", "Gold 2", "Gold 3", "Platinum 1", "Platinum 2", "Platinum 3", "Diamond 1", "Diamond 2", "Diamond 3", "Elite", "Champion", "Unreal"]
+  
+  def rank_to_int(rankValue:str) -> int:
+    if rankValue not in ranks:
+      raise CustomError(f"Rank not in ranks list: {rankValue}")
+   
+    return (len(ranks) - ranks.index(rankValue))
+  
+  def removeUneeded(rankList: list) -> list:
+    temp = [] 
+    for word in rankList:
+      if "%" not in word and "Ranked" not in word:
+        temp.append(word)
+    return temp
+
+  def randomSleep() -> None:
+    time.sleep(random.randint(5, 10))
+  
+  df = pandas.DataFrame(columns=["School Name", "Average Rank"])
+  
+  for school in list(data.keys()):
+    
+    team_average = 0
+    temp = []
+    for player in tqdm(data[school], desc=f"Scraping {school} Average", bar_format="{l_bar}{bar:30}{r_bar}", total=len(data[school])):
+    #for player in data[school]:
+      
+      if player["game_network_username"] is None:
+        continue
+
+      driver = webdriver.Edge(options)
+      driver.get(f"https://fortnitetracker.com/profile/search?q={player["game_network_username"].replace(" ", "%20")}")
+
+      try:
+        error_card = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".trn-card--error")))
+        driver.close()
+        team_average += rank_to_int(default_rank)
+        continue
+      except:
+        pass
+
+      try:
+        rank_text = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".profile-peak-ranks__grid")))
+        rank_text = removeUneeded(rank_text.text.split("\n"))
+        team_average += rank_to_int(rank_text[parameters.index(mode)])
+        driver.close()
+        randomSleep()
+      except:
+        driver.close()
+        continue    
+    
+    df.loc[len(df.index)] = [school, ranks[int(team_average / len(school))]]
+  df.to_csv(f"{fileName}.csv", header=True, index=False)
