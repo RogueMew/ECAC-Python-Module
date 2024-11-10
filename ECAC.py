@@ -77,7 +77,7 @@ class compDetails:
         """
        
         self.data = {}
-        self.url = 'https://api.ecac.gg/competition/{}'
+        self.url = "https://api.ecac.gg/competition/{}"
         pass
 
     def set_id(self, id: int) -> None:
@@ -88,17 +88,17 @@ class compDetails:
             id (int): Id of the competition
         """
 
-        self.data['id'] = id
+        self.data["id"] = id
         pass
     
-    def is_empty(self, data_point: str='id') -> bool:
+    def is_empty(self, data_point: str="id") -> bool:
         """
         Checks to see if specified data point is empty(i.e., None)
 
         Parameters:
             data_point (str, optional):
                 The key in the dictionary that is being checked.
-                Defaults to 'id' if not provided
+                Defaults to "id" if not provided
 
         Returns:
             bool: True if the variable is None, False otherwise.
@@ -108,7 +108,7 @@ class compDetails:
         """
         
         if data_point not in list(self.data.keys()):
-            raise CustomError(f'{data_point} is Not in List of Acceptable Parameters: {list(self.data.keys())}')
+            raise CustomError(f"{data_point} is Not in List of Acceptable Parameters: {list(self.data.keys())}")
         return self.data.get(data_point) is None
     
     def scrape_details(self) -> None:
@@ -120,13 +120,13 @@ class compDetails:
         """
         
         if self.is_empty():
-            raise CustomError('Id is not set and is a needed for any requests')
-        request = web.get(self.url.format(self.data['id'], 1))
+            raise CustomError("Id is not set and is a needed for any requests")
+        request = web.get(self.url.format(self.data["id"], 1))
         if request.status_code != 200:
-            raise CustomError(f'Error Communicating with Server, Error Code: {request.status_code} ')
+            raise CustomError(f"Error Communicating with Server, Error Code: {request.status_code} ")
        
-        self.data['name'] = json.loads(request.text).get("name", None)
-        self.data['size'] = json.loads(request.text).get('totalElements', None)
+        self.data["name"] = json.loads(request.text).get("name", None)
+        self.data["size"] = json.loads(request.text).get("totalElements", None)
     
     def read(self, name: bool=True, id: bool=True, size: bool=True) -> dict:
         """
@@ -138,17 +138,17 @@ class compDetails:
             size (bool, optional): If `True`, includes the competition size in the result. Defaults to `True`.
 
         Returns:
-            dict: A dictionary containing the selected competition data. Keys will be 'name', 'id', and/or 'size', based on the parameters.
+            dict: A dictionary containing the selected competition data. Keys will be "name", "id", and/or "size", based on the parameters.
         """
         
         result ={}
         if name:
-            result['name'] = self.data.get('name', None)
+            result["name"] = self.data.get("name", None)
         if id:
-            result['id'] = self.data.get('id', None)
+            result["id"] = self.data.get("id", None)
         
         if size:
-            result['size'] = self.data.get('size', None)
+            result["size"] = self.data.get("size", None)
         
         return result
 
@@ -166,16 +166,16 @@ class matchData:
             match_id (int): The Id of the match for which match data will be retrieved.
 
         Attributes:
-            header (header): An instance of the `header` class, set up with the 'expand' value to include specific match details when making requests.
+            header (header): An instance of the `header` class, set up with the "expand" value to include specific match details when making requests.
             url (str): The base URL used to fetch match data from the ECAC API.
             match_id (int): The Id of the match for which match data will be associated.
             team_id (int): The Id of the team for which match data will be associated
             team_match_id (int): The match id for the team that is inputted for team Id 
         """
     
-        self.header = header('expand')
-        self.header.set('_links,activeChannel,bracket{settings,competition},assignments{entry{leader,_links,representing{additionalOrganizations,profile}}},event,games,channel')
-        self.url = 'https://api.ecac.gg/competition/bracket/match/{}'
+        self.header = header("expand")
+        self.header.set("_links,activeChannel,bracket{settings,competition},assignments{entry{leader,_links,representing{additionalOrganizations,profile}}},event,games,channel")
+        self.url = "https://api.ecac.gg/competition/bracket/match/{}"
         self.match_id = match_id
         self.team_id = team_id
         self.team_match_id = None
@@ -195,7 +195,7 @@ class matchData:
         request = web.get(self.url.format(self.match_id), headers=self.header.read())
         
         if request.status_code != 200:
-            raise CustomError(f'Web Error Code: {request.status_code}')
+            raise CustomError(f"Web Error Code: {request.status_code}")
         
         return request.text
     
@@ -210,8 +210,8 @@ class matchData:
         request_json = json.loads(self.scrape())
         bracketIDS =[]
         
-        for bracketAssign in request_json['_expanded']['bracketAssignment']:
-            temp = {bracketAssign['id'] : bracketAssign['entry']['id']}
+        for bracketAssign in request_json["_expanded"]["bracketAssignment"]:
+            temp = {bracketAssign["id"] : bracketAssign["entry"]["id"]}
             bracketIDS.append(temp)
         for id in bracketIDS:
                 if list(id.values())[0] == self.team_id:
@@ -227,23 +227,23 @@ class matchData:
         self.id_finder()
         data = json.loads(self.scrape())
         
-        if data['state'] == 'OPEN':
-            print('Game Not Played Yet')
+        if data["state"] == "OPEN":
+            print("Game Not Played Yet")
             return
-        if data.get('winner', None) == None:
-            print('Game Ended in a Tie')
+        if data.get("winner", None) == None:
+            print("Game Ended in a Tie")
             return
         
-        if data['winner']['id'] != self.team_match_id:
-            print('Lost Overall')
+        if data["winner"]["id"] != self.team_match_id:
+            print("Lost Overall")
         else:
-            print('Won Overall')
+            print("Won Overall")
         
-        for game in data['_expanded']['matchGame']:
-            if game['winner']['id'] == self.team_match_id:
-                print(f"Won Game: {max(game['scores'])} - {min(game['scores'])}")
+        for game in data["_expanded"]["matchGame"]:
+            if game["winner"]["id"] == self.team_match_id:
+                print(f"Won Game: {max(game["scores"])} - {min(game["scores"])}")
             else:
-                print(f"Lost Game: {min(game['scores'])} - {max(game['scores'])}")    
+                print(f"Lost Game: {min(game["scores"])} - {max(game["scores"])}")    
             
     def parse(self) -> dict:
         """
@@ -258,60 +258,60 @@ class matchData:
         match_details = {}
         opponent = {}
         
-        match_details['date'] = data.get('startDate', None)
-        match_details['comp_name'] = data['_expanded']['competition'][0]['name']
+        match_details["date"] = data.get("startDate", None)
+        match_details["comp_name"] = data["_expanded"]["competition"][0]["name"]
 
-        for team in data['_expanded']['competitionEntry']:
-            if team['id'] != self.team_id:
-                opponent['team_id'] = team['id']
-                opponent['name'] = team['alternateName']
+        for team in data["_expanded"]["competitionEntry"]:
+            if team["id"] != self.team_id:
+                opponent["team_id"] = team["id"]
+                opponent["name"] = team["alternateName"]
 
-        for team in data['_expanded']['bracketAssignment']:
-            if team['entry']['id'] == opponent['team_id']:
-                opponent['match_id'] = team['entry']['id']
+        for team in data["_expanded"]["bracketAssignment"]:
+            if team["entry"]["id"] == opponent["team_id"]:
+                opponent["match_id"] = team["entry"]["id"]
 
-        match_details['opponent'] = opponent
+        match_details["opponent"] = opponent
 
         home_team = {}
 
-        for team in data['_expanded']['competitionEntry']:
-            if team['id'] == self.team_id:
-                home_team['team_id'] = team['id']
-                home_team['name'] = team['alternateName']
+        for team in data["_expanded"]["competitionEntry"]:
+            if team["id"] == self.team_id:
+                home_team["team_id"] = team["id"]
+                home_team["name"] = team["alternateName"]
 
-        for team in data['_expanded']['bracketAssignment']:
-            if team['entry']['id'] == self.team_id:
-                home_team['match_id'] = team['entry']['id']
+        for team in data["_expanded"]["bracketAssignment"]:
+            if team["entry"]["id"] == self.team_id:
+                home_team["match_id"] = team["entry"]["id"]
         
-        match_details['home_team'] = home_team
+        match_details["home_team"] = home_team
 
         games = []
 
-        if data['state'] == 'OPEN' or 'matchGame' not in data['_expanded'].keys():
+        if data["state"] == "OPEN" or "matchGame" not in data["_expanded"].keys():
             games = ["not_played"]
         else:
-            for game in data['_expanded']['matchGame']:
+            for game in data["_expanded"]["matchGame"]:
                 temp_game = {}
                 
-                temp_game['game_number'] = game['ordinal']
-                temp_game['scores'] = game['scores']
+                temp_game["game_number"] = game["ordinal"]
+                temp_game["scores"] = game["scores"]
                 
-                if game.get('winner', None) is None:
-                        temp_game['winner'] = 'Not Defined'
+                if game.get("winner", None) is None:
+                        temp_game["winner"] = "Not Defined"
                 else:    
-                    if game['winner']['id'] != self.team_match_id:
-                        temp_game['winner'] = opponent['name']
+                    if game["winner"]["id"] != self.team_match_id:
+                        temp_game["winner"] = opponent["name"]
                     else:
-                        temp_game['winner'] = home_team['name']
+                        temp_game["winner"] = home_team["name"]
                 
                 games.append(temp_game)
 
-        match_details['games'] = games
+        match_details["games"] = games
 
         return match_details 
 
 #Header
-ECAC_API_header = header('authorization')
+ECAC_API_header = header("authorization")
 
 #Classed Variables
 comp_details = compDetails()
@@ -319,9 +319,9 @@ comp_details = compDetails()
 #URLs
 contacts_url = "https://api.ecac.gg/competition/entry/{}/_view/contact-accounts"
 comp_url = "https://api.ecac.gg/competition/entry/document?competitionId={}&page=0&size=1000&sort=seed"
-bracket_url = 'https://api.ecac.gg/competition/entry/document?competitionId={}&brackets={}&page=0&size=2000'
+bracket_url = "https://api.ecac.gg/competition/entry/document?competitionId={}&brackets={}&page=0&size=2000"
 team_info_url = "https://api.ecac.gg/competition/entry/{}" 
-match_data_url = 'https://api.ecac.gg/competition/{}/_view/matches?entry={}&page=0'
+match_data_url = "https://api.ecac.gg/competition/{}/_view/matches?entry={}&page=0"
 competition_brackets_url ="https://api.ecac.gg/competition/{}/brackets"
 
 network = None
@@ -352,7 +352,7 @@ def get_team_name(team_id: int) -> str:
     str: Team Name
     """
 
-    return json.loads(web.get(team_info_url.format(team_id)).text).get('alternateName', f'{team_id}')      
+    return json.loads(web.get(team_info_url.format(team_id)).text).get("alternateName", f"{team_id}")      
     
 def grab_comp_dict() -> dict:
     """
@@ -366,15 +366,15 @@ def grab_comp_dict() -> dict:
     """
     
     if comp_details.is_empty():
-        raise CustomError('Competition ID is Empty')
+        raise CustomError("Competition ID is Empty")
 
-    request = web.get(comp_url.format(comp_details.read(name=False, size=False)['id']))
+    request = web.get(comp_url.format(comp_details.read(name=False, size=False)["id"]))
 
     if request.status_code != 200:
-        raise CustomError(f'Request Error: {request.status_code}')
+        raise CustomError(f"Request Error: {request.status_code}")
 
     if json.dumps(request.text) == {}:
-        raise CustomError('Empty Comp Site')
+        raise CustomError("Empty Comp Site")
 
     return json.loads(request.text)
 
@@ -394,14 +394,14 @@ def grab_bracket_dict(bracket_id: int) -> dict:
     """
     
     if comp_details.is_empty():
-        raise CustomError('Competition ID is not Set')
-    request = web.get(bracket_url.format(comp_details.read(name=False, size=False)['id'], bracket_id))
+        raise CustomError("Competition ID is not Set")
+    request = web.get(bracket_url.format(comp_details.read(name=False, size=False)["id"], bracket_id))
 
     if request.status_code != 200:
-        raise CustomError(f'Request Error: {request.status_code}')
+        raise CustomError(f"Request Error: {request.status_code}")
 
     if json.dumps(request.text) == {}:
-        raise CustomError('Empty Bracket Site')
+        raise CustomError("Empty Bracket Site")
     
     return json.loads(request.text)
     
@@ -421,10 +421,10 @@ def scrape_team_ids_bracket(bracket_id: int) -> list:
     
     bracket_contents = grab_bracket_dict(bracket_id)
     team_id_list = []
-    if 'content' not in list(bracket_contents.keys()):
-        raise CustomError('Missing Data')
-    for team in bracket_contents['content']:
-        team_id_list.append(team['id'])
+    if "content" not in list(bracket_contents.keys()):
+        raise CustomError("Missing Data")
+    for team in bracket_contents["content"]:
+        team_id_list.append(team["id"])
     return team_id_list
 
 #Gather and Scrape Funcs   
@@ -441,10 +441,10 @@ def scrape_team_ids() -> list:
     
     comp_contents = grab_comp_dict()
     team_id_list = []
-    if 'content' not in list(comp_contents.keys()):
-        raise CustomError('Missing Data')
-    for team in comp_contents['content']:
-        team_id_list.append(team['id'])
+    if "content" not in list(comp_contents.keys()):
+        raise CustomError("Missing Data")
+    for team in comp_contents["content"]:
+        team_id_list.append(team["id"])
     return team_id_list
 
 def get_team_contacts(teamIDS: list) -> list:
@@ -461,16 +461,16 @@ def get_team_contacts(teamIDS: list) -> list:
     """
     
     if ECAC_API_header.is_empty():
-        raise CustomError('ECAC Header is not Set')
+        raise CustomError("ECAC Header is not Set")
 
     team_contacts = []
-    for id in tqdm(teamIDS, total=len(teamIDS), desc='Scraping Team Contacts Page', bar_format="{l_bar}{bar:30}{r_bar}"):
+    for id in tqdm(teamIDS, total=len(teamIDS), desc="Scraping Team Contacts Page", bar_format="{l_bar}{bar:30}{r_bar}"):
         request = web.get(contacts_url.format(id), headers=ECAC_API_header.read())
         if request.status_code != 200:
             if request.status_code == 401:
-                raise CustomError('Request Header Needs Updating')
+                raise CustomError("Request Header Needs Updating")
             else:
-                raise CustomError(f'Error in Communication with API, Web Error Code {request.status_code}')
+                raise CustomError(f"Error in Communication with API, Web Error Code {request.status_code}")
         team_contacts.append(request.text)
     return team_contacts
 
@@ -493,38 +493,38 @@ def process_contact_info(team_id_list: list) -> dict:
         user_id_list = []
         user_contacts = []
         if temp_dict != {}:
-            for contacts in temp_dict['content']:
-                user_id_list.append(contacts['user']['id'])
+            for contacts in temp_dict["content"]:
+                user_id_list.append(contacts["user"]["id"])
 
             user_id_list = list(set(user_id_list))
 
             for id in user_id_list:
                 user_dict = {
-                    'id' : None,
-                    'game_network_username': None,
-                    'discord' : None
+                    "id" : None,
+                    "game_network_username": None,
+                    "discord" : None
                 }
-                for contacts in temp_dict['content']:
-                    if contacts['user']['id'] == id:
-                        user_dict['id'] = id
-                        if contacts['network'] == network:
+                for contacts in temp_dict["content"]:
+                    if contacts["user"]["id"] == id:
+                        user_dict["id"] = id
+                        if contacts["network"] == network:
                             
-                            user_dict['game_network_username'] = contacts['handle']
+                            user_dict["game_network_username"] = contacts["handle"]
 
-                        elif contacts['network'] == 'DISCORD':
-                            user_dict['discord'] = contacts['handle']
+                        elif contacts["network"] == "DISCORD":
+                            user_dict["discord"] = contacts["handle"]
                 user_contacts.append(user_dict)
             return user_contacts
         
         else:
-            user_dict = {'game_network_username' : 'Empty Team', 'discord' : 'Empty Team'}
+            user_dict = {"game_network_username" : "Empty Team", "discord" : "Empty Team"}
             user_contacts.append(user_dict)
             return user_contacts
 
     temp_dict = {}
     teams_contacts = get_team_contacts(team_id_list)
     
-    for team in tqdm(teams_contacts, total= len(teams_contacts), desc= 'Processing Teams           ', bar_format="{l_bar}{bar:30}{r_bar}"):
+    for team in tqdm(teams_contacts, total= len(teams_contacts), desc= "Processing Teams           ", bar_format="{l_bar}{bar:30}{r_bar}"):
         temp_dict[get_team_name(team_id_list[teams_contacts.index(team)])] = process_contact_info_func(team)
     return temp_dict
 
@@ -545,17 +545,17 @@ def team_match_ids(team_id: int) -> list:
     
     returned_list = []
 
-    expandHeader = header('expand')
-    expandHeader.set('_links,totalElements,content{bracket{settings},event,games,assignments{entry{leader,representing{additionalOrganizations}}}}')
-    request = web.get(match_data_url.format(comp_details.read(name=False,size=False)['id'], team_id), headers=expandHeader.read())
+    expandHeader = header("expand")
+    expandHeader.set("_links,totalElements,content{bracket{settings},event,games,assignments{entry{leader,representing{additionalOrganizations}}}}")
+    request = web.get(match_data_url.format(comp_details.read(name=False,size=False)["id"], team_id), headers=expandHeader.read())
 
     if request.status_code != 200:
-        raise CustomError(f'Web Status Code: {request.status_code}')
-    if request.json().get('content', None) == None:
+        raise CustomError(f"Web Status Code: {request.status_code}")
+    if request.json().get("content", None) == None:
         return returned_list
     
-    for item in request.json()['content']:
-        returned_list.append(item['id'])
+    for item in request.json()["content"]:
+        returned_list.append(item["id"])
     
     return returned_list
 
@@ -574,10 +574,10 @@ def scrape_bracket_ids(competition_id: int) -> list:
     if request.status_code != 200:
         raise CustomError(f"Error Connecting with API, Web Error: {request.status_code}")
     
-    if 'content' not in list(json.loads(request.text).keys()):
+    if "content" not in list(json.loads(request.text).keys()):
         raise CustomError(f"Missing Vital key for Data")
     
-    for bracket in json.loads(request.text)['content']:
-        returned_list.append(bracket.get('id'))
+    for bracket in json.loads(request.text)["content"]:
+        returned_list.append(bracket.get("id"))
 
     return returned_list
