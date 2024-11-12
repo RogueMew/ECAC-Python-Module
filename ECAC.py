@@ -152,164 +152,6 @@ class compDetails:
         
         return result
 
-class matchData:
-    """
-    Class that handles match data
-    """
-    
-    def __init__(self, team_id: int,match_id: int) -> None:
-        """
-        Initializes a new instance of the matchData class.
-
-        Parameters:
-            team_id (int): The Id of the team for which the match data is from
-            match_id (int): The Id of the match for which match data will be retrieved.
-
-        Attributes:
-            header (header): An instance of the `header` class, set up with the "expand" value to include specific match details when making requests.
-            url (str): The base URL used to fetch match data from the ECAC API.
-            match_id (int): The Id of the match for which match data will be associated.
-            team_id (int): The Id of the team for which match data will be associated
-            team_match_id (int): The match id for the team that is inputted for team Id 
-        """
-    
-        self.header = header("expand")
-        self.header.set("_links,activeChannel,bracket{settings,competition},assignments{entry{leader,_links,representing{additionalOrganizations,profile}}},event,games,channel")
-        self.url = "https://api.ecac.gg/competition/bracket/match/{}"
-        self.match_id = match_id
-        self.team_id = team_id
-        self.team_match_id = None
-        pass
-
-    def scrape(self) -> str:
-        """
-        Scrapes the API endpoint responsible for the Match Data
-
-        Returns:
-            str: The JSON of the API is returned as a string 
-        
-        Raises:
-            CustomError: If there is an error communicating with the server.
-        """
-    
-        request = web.get(self.url.format(self.match_id), headers=self.header.read())
-        
-        if request.status_code != 200:
-            raise CustomError(f"Web Error Code: {request.status_code}")
-        
-        return request.text
-    
-    def id_finder(self) -> str:
-        """
-        Parses the Match Data to get the inputted teams Match ID
-
-        Returns:
-            str: The match Id as a string
-        """
-    
-        request_json = json.loads(self.scrape())
-        bracketIDS =[]
-        
-        for bracketAssign in request_json["_expanded"]["bracketAssignment"]:
-            temp = {bracketAssign["id"] : bracketAssign["entry"]["id"]}
-            bracketIDS.append(temp)
-        for id in bracketIDS:
-                if list(id.values())[0] == self.team_id:
-                    self.team_match_id = list(id.keys())[0]
-
-        return self.team_match_id
-    
-    def print_match_results(self) -> None:
-        """
-        (BETA) Function to parse data and print it 
-        """
-    
-        self.id_finder()
-        data = json.loads(self.scrape())
-        
-        if data["state"] == "OPEN":
-            print("Game Not Played Yet")
-            return
-        if data.get("winner", None) == None:
-            print("Game Ended in a Tie")
-            return
-        
-        if data["winner"]["id"] != self.team_match_id:
-            print("Lost Overall")
-        else:
-            print("Won Overall")
-        
-        for game in data["_expanded"]["matchGame"]:
-            if game["winner"]["id"] == self.team_match_id:
-                print(f"Won Game: {max(game["scores"])} - {min(game["scores"])}")
-            else:
-                print(f"Lost Game: {min(game["scores"])} - {max(game["scores"])}")    
-            
-    def parse(self) -> dict:
-        """
-        (BETA) Parses the match data and returns important info about the match
-
-        Returns:
-            dict: Returns match data as a Dictionary 
-        """
-    
-        data = json.loads(self.scrape())
-
-        match_details = {}
-        opponent = {}
-        
-        match_details["date"] = data.get("startDate", None)
-        match_details["comp_name"] = data["_expanded"]["competition"][0]["name"]
-
-        for team in data["_expanded"]["competitionEntry"]:
-            if team["id"] != self.team_id:
-                opponent["team_id"] = team["id"]
-                opponent["name"] = team["alternateName"]
-
-        for team in data["_expanded"]["bracketAssignment"]:
-            if team["entry"]["id"] == opponent["team_id"]:
-                opponent["match_id"] = team["entry"]["id"]
-
-        match_details["opponent"] = opponent
-
-        home_team = {}
-
-        for team in data["_expanded"]["competitionEntry"]:
-            if team["id"] == self.team_id:
-                home_team["team_id"] = team["id"]
-                home_team["name"] = team["alternateName"]
-
-        for team in data["_expanded"]["bracketAssignment"]:
-            if team["entry"]["id"] == self.team_id:
-                home_team["match_id"] = team["entry"]["id"]
-        
-        match_details["home_team"] = home_team
-
-        games = []
-
-        if data["state"] == "OPEN" or "matchGame" not in data["_expanded"].keys():
-            games = ["not_played"]
-        else:
-            for game in data["_expanded"]["matchGame"]:
-                temp_game = {}
-                
-                temp_game["game_number"] = game["ordinal"]
-                temp_game["scores"] = game["scores"]
-                
-                if game.get("winner", None) is None:
-                        temp_game["winner"] = "Not Defined"
-                else:    
-                    if game["winner"]["id"] != self.team_match_id:
-                        temp_game["winner"] = opponent["name"]
-                    else:
-                        temp_game["winner"] = home_team["name"]
-                
-                games.append(temp_game)
-
-        match_details["games"] = games
-
-        return match_details 
-
 #Header
 ECAC_API_header = header("authorization")
 
@@ -319,31 +161,13 @@ network = None
 
 #Util
 def is_empty(var: any) -> bool:
-    """
-    Returns a Boolean indicating if the variable is None.
-    
-    Parameters:
-        var (any): The variable to check.
-    
-    Returns:
-        bool: True if the variable is None, False otherwise.
-    """
+
     
     return var is None
 
 #Competition Functions
 def get_team_name(team_id: int) -> str:
-    """
-    Returns a string of the Team Name based off Team Id
-
-    Parameters:
-    team_id (int): Team Id
-
-    Returns:
-    str: Team Name
-    """
-
-    return json.loads(web.get("https://api.ecac.gg/competition/entry/{}" .format(team_id)).text).get("alternateName", f"{team_id}")      
+    return json.loads(web.get("https://api.ecac.gg/competition/entry/{}".format(team_id)).text).get("alternateName", f"{team_id}")      
     
 def grab_comp_dict() -> dict:
     """
@@ -524,7 +348,7 @@ def process_contact_info(team_id_list: list) -> dict:
     temp_dict = {}
     teams_contacts = get_team_contacts(team_id_list)
     
-    for team in tqdm(teams_contacts, total= len(teams_contacts), desc= "Processing Teams           ", bar_format="{l_bar}{bar:30}{r_bar}"):
+    for team in tqdm(teams_contacts, total= len(teams_contacts), desc= "Processing Teams", bar_format="{l_bar}{bar:30}{r_bar}"):
         participant_id = []
         for participant in json.loads(web.get(f"https://api.ecac.gg/competition/entry/{team_id_list[teams_contacts.index(team)]}/members").text)["content"]:
             participant_id.append(participant["participant"]["id"])
