@@ -25,7 +25,7 @@ options = webdriver.EdgeOptions()
 options.add_experimental_option("excludeSwitches", ["enable-logging"])
 #options.add_argument("--headless")
 
-def scrape_current_rank(jsonData: dict, fileName: str)  -> None:
+def scrape_current_rank(jsonData: dict, fileName: str="Output")  -> None:
   def removeUneeded(rankList: list) -> list:
     temp = [] 
     for word in rankList:
@@ -70,7 +70,7 @@ def scrape_current_rank(jsonData: dict, fileName: str)  -> None:
             
   df.to_csv(f"{fileName}.csv",encoding="utf-8", index=False, header=True)
 
-def scrape_peak_rank(jsonData: dict, fileName: str) -> None:
+def scrape_peak_rank(jsonData: dict, fileName: str="Output") -> None:
 
   def removeUneeded(rankList: list) -> list:
     tempList = []
@@ -116,7 +116,7 @@ def scrape_peak_rank(jsonData: dict, fileName: str) -> None:
         continue
   df.to_csv(f"{fileName}.csv", sep="," ,encoding="utf-8", index=False, header=True)
 
-def scrape_current_team_average(data:dict, fileName: str ="Ouput",mode: str="ZB") -> None:
+def scrape_current_team_average(data:dict, fileName: str ="Ouput",mode: str="BR") -> None:
   parameters = ["BR", "ZB", "RBR", "RZB"]
   
   
@@ -176,7 +176,7 @@ def scrape_current_team_average(data:dict, fileName: str ="Ouput",mode: str="ZB"
     df.loc[len(df.index)] = [school, ranks[int(team_average / len(school))]]
   df.to_csv(f"{fileName}.csv", header=True, index=False)
 
-def scrape_peak_team_average(data:dict, fileName: str ="Ouput",mode: str="ZB") -> None:
+def scrape_peak_team_average(data:dict, fileName: str ="Ouput",mode: str="BR") -> None:
   parameters = ["BR", "ZB"]
   
   
