@@ -5,3 +5,6 @@ temp.json
 /Test Data
 *.csv
 /Test_Data
+key.txt
+/Ouput
+*.pyc
