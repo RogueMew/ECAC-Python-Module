@@ -1,6 +1,7 @@
 import pandas
 import os
 import random
+import time
 
 from tqdm import tqdm
 
@@ -42,7 +43,7 @@ def scrape_current_rank(jsonData: dict, file_name: str="Output", output_folder:s
         
           
         try:
-          error_card = WebDriverWait(driver, random.randint(5,10)).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".trn-card--error")))
+          error_card = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".trn-card--error")))
           df.loc[len(df.index)] = [user["game_network_username"], None,None,None,None]
           driver.close()
           continue
@@ -55,6 +56,8 @@ def scrape_current_rank(jsonData: dict, file_name: str="Output", output_folder:s
           rankText.insert(0, user["game_network_username"])
           df.loc[len(df.index)] = rankText
           driver.close()
+          time.sleep(random.randint(10, 15))
+          
         except:
           driver.close()
           df.loc[len(df.index)] = [user["game_network_username"], None,None,None,None]
@@ -88,7 +91,7 @@ def scrape_peak_rank(jsonData: dict, file_name: str="Output", output_folder:str 
       driver.get(f"https://fortnitetracker.com/profile/search?q={user["game_network_username"].replace(" ", "%20")}")
 
       try:
-        error_card = WebDriverWait(driver, random.randint(5, 10)).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".trn-card--error")))
+        error_card = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".trn-card--error")))
         df.loc[len(df.index)] = [user["game_network_username"], "Username Not Found", "Username Not Found"]
         driver.close()
         continue
@@ -100,14 +103,15 @@ def scrape_peak_rank(jsonData: dict, file_name: str="Output", output_folder:str 
         rankText = removeUneeded(rankText.text.split("\n"))
         rankText.insert(0, user["game_network_username"])
         df.loc[len(df.index)] = rankText
-        driver.close()      
+        driver.close()
+        time.sleep(random.randint(10, 15))
       except:
         driver.close()
         df.loc[len(df.index)] = [user["game_network_username"], "No Peak Rank", "No Peak Rank"]
         continue
   
   if output_folder is not None:
-    if not os.path.exists(f"./{output_folder}"):      
+    if os.path.exists(f"./{output_folder}") is False:      
       df.to_csv(f"./{output_folder}/{file_name}.csv",encoding="utf-8", index=False, header=True)
     else:
       raise CustomError("Output Folder Doesnt Exist")
@@ -149,7 +153,7 @@ def scrape_current_team_average(data:dict, file_name: str ="Ouput", output_folde
       driver.get(f"https://fortnitetracker.com/profile/search?q={player["game_network_username"].replace(" ", "%20")}")
 
       try:
-        error_card = WebDriverWait(driver, random.randint(5, 10)).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".trn-card--error")))
+        error_card = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".trn-card--error")))
         driver.close()
         team_average += rank_to_int(default_rank)
         continue
@@ -161,6 +165,7 @@ def scrape_current_team_average(data:dict, file_name: str ="Ouput", output_folde
         rank_text = removeUneeded(rank_text.text.split("\n"))
         team_average += rank_to_int(rank_text[parameters.index(mode)])
         driver.close()
+        time.sleep(random.randint(10, 15))
       except:
         driver.close()
         continue    
@@ -211,7 +216,7 @@ def scrape_peak_team_average(data:dict, file_name: str ="Ouput", output_folder: 
       driver.get(f"https://fortnitetracker.com/profile/search?q={player["game_network_username"].replace(" ", "%20")}")
 
       try:
-        error_card = WebDriverWait(driver, random.randint(5, 10)).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".trn-card--error")))
+        error_card = WebDriverWait(driver,5).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".trn-card--error")))
         driver.close()
         team_average += rank_to_int(default_rank)
         continue
@@ -223,6 +228,8 @@ def scrape_peak_team_average(data:dict, file_name: str ="Ouput", output_folder: 
         rank_text = removeUneeded(rank_text.text.split("\n"))
         team_average += rank_to_int(rank_text[parameters.index(mode)])
         driver.close()
+        time.sleep(random.randint(10, 15))
+        
       except:
         driver.close()
         continue    

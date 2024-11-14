@@ -349,8 +349,12 @@ def process_contact_info(team_id_list: list) -> dict:
     teams_contacts = get_team_contacts(team_id_list)
     
     for team in tqdm(teams_contacts, total= len(teams_contacts), desc= "Processing Teams", bar_format="{l_bar}{bar:30}{r_bar}"):
+    #for team in teams_contacts:
         participant_id = []
-        for participant in json.loads(web.get(f"https://api.ecac.gg/competition/entry/{team_id_list[teams_contacts.index(team)]}/members").text)["content"]:
+        data = json.loads(web.get(f"https://api.ecac.gg/competition/entry/{team_id_list[teams_contacts.index(team)]}/members").text)
+        if data.get("content", None) is None:
+            continue
+        for participant in data["content"]:
             participant_id.append(participant["participant"]["id"])
         
 
