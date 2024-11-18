@@ -25,7 +25,7 @@ options.add_experimental_option("excludeSwitches", ["enable-logging"])
 
 def scrape_current_rank(json_data:dict, file_name: str="Output", output_folder: str = None) -> None:
     df = pandas.DataFrame(columns=["Username", "Team", "Current Rank"])
-    for team in tqdm(list(json_data.keys()), desc="Scraping Current Ranks", bar_format="{l_bar}{bar:30}{r_bar}" , total=len(list(json_data.keys()))):
+    for team in tqdm(list(json_data), desc="Scraping Current Ranks", bar_format="{l_bar}{bar:30}{r_bar}" , total=len(list(json_data))):
         for player in json_data[team]:
             
             driver = webdriver.Edge(options)
@@ -45,19 +45,12 @@ def scrape_current_rank(json_data:dict, file_name: str="Output", output_folder: 
                 driver.close()
             except:
                 df.loc[len(df.index)] = [player["game_network_username"],team, "No Rank Found"]
-                pass
-                
-    if output_folder is not None:
-        if not os.path.exists(f"./{output_folder}"):       
-            df.to_csv(f"./{output_folder}/{file_name}.csv",encoding="utf-8", index=False, header=True)
-        else:
-            raise CustomError("Output Folder Doesnt Exist")
-    else:
-        df.to_csv(f"{fileName}.csv",encoding="utf-8", index=False, header=True)
-    
+                pass             
+    df.to_csv(f"{file_name}.csv" if output_folder is None else f"./{output_folder}/{file_name}.csv",encoding="utf-8", index=False, header=True)
+
 def scrape_peak_rank(json_data: dict, file_name:str = "Output", output_folder: str = None) -> None:
     df = pandas.DataFrame(columns=["Username", "Team", "Peak Rank", "Peak Act/Episode"])
-    for team in tqdm(list(json_data.keys()), desc="Scraping Peak Ranks", bar_format="{l_bar}{bar:30}{r_bar}" , total=len(list(json_data.keys()))):
+    for team in tqdm(list(json_data), desc="Scraping Peak Ranks", bar_format="{l_bar}{bar:30}{r_bar}" , total=len(list(json_data))):
         for player in json_data[team]:
             driver = webdriver.Edge(options)
             driver.get(f"https://tracker.gg/valorant/profile/riot/{player['game_network_username'].replace(" ", "%20").replace("#", "%23")}/overview")
@@ -86,13 +79,7 @@ def scrape_peak_rank(json_data: dict, file_name:str = "Output", output_folder: s
                 df.loc[len(df.index)] = [player["game_network_username"], team, "No Peak Found", "Unknown"]
                 pass
     
-    if output_folder is not None:
-        if not os.path.exists(f"./{output_folder}"):       
-            df.to_csv(f"./{output_folder}/{file_name}.csv",encoding="utf-8", index=False, header=True)
-        else:
-            raise CustomError("Output Folder Doesnt Exist")
-    else:
-        df.to_csv(f"{file_name}.csv",encoding="utf-8", index=False, header=True)
+    df.to_csv(f"{file_name}.csv" if output_folder is None else f"./{output_folder}/{file_name}.csv",encoding="utf-8", index=False, header=True)  
 
 def scrape_current_team_average(json_data: dict, file_name:str = "Output", output_folder: str = None) -> None:
     df = pandas.DataFrame(columns=["School Name",  "Team Average"])
@@ -113,7 +100,7 @@ def scrape_current_team_average(json_data: dict, file_name:str = "Output", outpu
         return len(rank_list) - rank_list.index(rank)
     
     
-    for team in tqdm(list(json_data.keys()), desc="Scraping Team Current Average", bar_format="{l_bar}{bar:30}{r_bar}", total=len(list(json_data.keys()))):    
+    for team in tqdm(list(json_data), desc="Scraping Team Current Average", bar_format="{l_bar}{bar:30}{r_bar}", total=len(list(json_data))):    
         team_average = 0
         for  player in json_data[team]:
             
@@ -138,11 +125,5 @@ def scrape_current_team_average(json_data: dict, file_name:str = "Output", outpu
                 continue 
                 
         df.loc[len(df.index)] = [team, rank_list[int(team_average/len(json_data[team]))]]
-        
-    if output_folder is not None:
-        if not os.path.exists(f"./{output_folder}"):       
-            df.to_csv(f"./{output_folder}/{file_name}.csv",encoding="utf-8", index=False, header=True)
-        else:
-            raise CustomError("Output Folder Doesnt Exist")
-    else:
-        df.to_csv(f"{file_name}.csv",encoding="utf-8", index=False, header=True)
+    
+    df.to_csv(f"{file_name}.csv" if output_folder is None else f"./{output_folder}/{file_name}.csv",encoding="utf-8", index=False, header=True)
