@@ -10,3 +10,4 @@ key.txt
 *.pyc
 ids.json
 ids.txt
+/Output
