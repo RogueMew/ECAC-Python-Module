@@ -1,13 +1,6 @@
 import requests as web
 import json
 
-class customError(Exception):
-    def __init__(self, message: str) -> None:
-        self.message = message
-        
-    def __str__(self) -> str:
-        return self.message
-    
 class header:
     def __init__(self, headerTitle: any) -> None:
         self.headerTitle = headerTitle
