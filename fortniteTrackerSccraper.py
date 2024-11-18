@@ -35,16 +35,16 @@ def scrape_current_rank(jsonData: dict, file_name: str="Output", output_folder:s
   df = pandas.DataFrame(columns=["Username", "Ranked BR", "Ranked ZB", "Ranked Reload BR", "Ranked Reload ZB"])
   for school in tqdm(list(jsonData.keys()),desc="Scraping Ranks             ", bar_format="{l_bar}{bar:30}{r_bar}" ,total=len(list(jsonData.keys()))):
       for user in jsonData[school]:
-        if user["game_network_username"] is None:
+        if user["epic"] is None:
             continue
           
         driver = webdriver.Edge(options)
-        driver.get(f"https://fortnitetracker.com/profile/search?q={user["game_network_username"].replace(" ", "%20")}")    
+        driver.get(f"https://fortnitetracker.com/profile/search?q={user["epic"].replace(" ", "%20")}")    
         
           
         try:
           error_card = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".trn-card--error")))
-          df.loc[len(df.index)] = [user["game_network_username"], None,None,None,None]
+          df.loc[len(df.index)] = [user["epic"], None,None,None,None]
           driver.close()
           continue
         except:
@@ -53,14 +53,14 @@ def scrape_current_rank(jsonData: dict, file_name: str="Output", output_folder:s
         try:
           rankText = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".profile-current-ranks__content")))
           rankText = removeUneeded(rankText.text.split("\n"))
-          rankText.insert(0, user["game_network_username"])
+          rankText.insert(0, user["epic"])
           df.loc[len(df.index)] = rankText
           driver.close()
           time.sleep(random.randint(10, 15))
           
         except:
           driver.close()
-          df.loc[len(df.index)] = [user["game_network_username"], None,None,None,None]
+          df.loc[len(df.index)] = [user["epic"], None,None,None,None]
           continue
   
   if output_folder is not None:
@@ -84,15 +84,15 @@ def scrape_peak_rank(jsonData: dict, file_name: str="Output", output_folder:str 
   for school in tqdm(list(jsonData.keys()), desc="Scraping Ranks", bar_format="{l_bar}{bar:30}{r_bar}", total=len(list(jsonData.keys()))):
     for user in jsonData[school]:
       
-      if user["game_network_username"] is None:
+      if user["epic"] is None:
         continue
       
       driver = webdriver.Edge(options)
-      driver.get(f"https://fortnitetracker.com/profile/search?q={user["game_network_username"].replace(" ", "%20")}")
+      driver.get(f"https://fortnitetracker.com/profile/search?q={user["epic"].replace(" ", "%20")}")
 
       try:
         error_card = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".trn-card--error")))
-        df.loc[len(df.index)] = [user["game_network_username"], "Username Not Found", "Username Not Found"]
+        df.loc[len(df.index)] = [user["epic"], "Username Not Found", "Username Not Found"]
         driver.close()
         continue
       except:
@@ -101,13 +101,13 @@ def scrape_peak_rank(jsonData: dict, file_name: str="Output", output_folder:str 
       try:
         rankText = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".profile-peak-ranks__grid")))
         rankText = removeUneeded(rankText.text.split("\n"))
-        rankText.insert(0, user["game_network_username"])
+        rankText.insert(0, user["epic"])
         df.loc[len(df.index)] = rankText
         driver.close()
         time.sleep(random.randint(10, 15))
       except:
         driver.close()
-        df.loc[len(df.index)] = [user["game_network_username"], "No Peak Rank", "No Peak Rank"]
+        df.loc[len(df.index)] = [user["epic"], "No Peak Rank", "No Peak Rank"]
         continue
   
   if output_folder is not None:
@@ -146,11 +146,11 @@ def scrape_current_team_average(data:dict, file_name: str ="Ouput", output_folde
     temp = []
     for player in tqdm(data[school], desc=f"Scraping {school} Average", bar_format="{l_bar}{bar:30}{r_bar}", total=len(data[school])):
       
-      if player["game_network_username"] is None:
+      if player["epic"] is None:
         continue
 
       driver = webdriver.Edge(options)
-      driver.get(f"https://fortnitetracker.com/profile/search?q={player["game_network_username"].replace(" ", "%20")}")
+      driver.get(f"https://fortnitetracker.com/profile/search?q={player["epic"].replace(" ", "%20")}")
 
       try:
         error_card = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".trn-card--error")))
@@ -209,11 +209,11 @@ def scrape_peak_team_average(data:dict, file_name: str ="Ouput", output_folder: 
     temp = []
     for player in tqdm(data[school], desc=f"Scraping {school} Average", bar_format="{l_bar}{bar:30}{r_bar}", total=len(data[school])):
             
-      if player["game_network_username"] is None:
+      if player["epic"] is None:
         continue
 
       driver = webdriver.Edge(options)
-      driver.get(f"https://fortnitetracker.com/profile/search?q={player["game_network_username"].replace(" ", "%20")}")
+      driver.get(f"https://fortnitetracker.com/profile/search?q={player["epic"].replace(" ", "%20")}")
 
       try:
         error_card = WebDriverWait(driver,5).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".trn-card--error")))
