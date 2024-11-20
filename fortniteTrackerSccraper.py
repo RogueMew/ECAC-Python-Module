@@ -84,7 +84,7 @@ def scrape_peak_rank(jsonData: dict, file_name: str="Output", output_folder:str 
   for school in tqdm(list(jsonData.keys()), desc="Scraping Ranks", bar_format="{l_bar}{bar:30}{r_bar}", total=len(list(jsonData.keys()))):
     for user in jsonData[school]:
       
-      if user["epic"] is None:
+      if user.get("epic", None) is None:
         continue
       
       driver = webdriver.Edge(options)
@@ -104,17 +104,17 @@ def scrape_peak_rank(jsonData: dict, file_name: str="Output", output_folder:str 
         rankText.insert(0, user["epic"])
         df.loc[len(df.index)] = rankText
         driver.close()
-        time.sleep(random.randint(10, 15))
+        time.sleep(random.randint(5, 10))
       except:
         driver.close()
         df.loc[len(df.index)] = [user["epic"], "No Peak Rank", "No Peak Rank"]
         continue
   
   if output_folder is not None:
-    if os.path.exists(f"./{output_folder}") is False:      
+    if os.path.exists(f"./{output_folder}") is True:      
       df.to_csv(f"./{output_folder}/{file_name}.csv",encoding="utf-8", index=False, header=True)
     else:
-      raise CustomError("Output Folder Doesnt Exist")
+      os.mkdir(f"./{output_folder}")
   else:
       df.to_csv(f"{file_name}.csv",encoding="utf-8", index=False, header=True)
 
