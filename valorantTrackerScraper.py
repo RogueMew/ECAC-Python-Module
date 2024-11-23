@@ -29,22 +29,22 @@ def scrape_current_rank(json_data:dict, file_name: str="Output", output_folder: 
         for player in json_data[team]:
             
             driver = webdriver.Edge(options)
-            driver.get(f"https://tracker.gg/valorant/profile/riot/{player['game_network_username'].replace(" ", "%20").replace("#", "%23")}/overview")
+            driver.get(f"https://tracker.gg/valorant/profile/riot/{player['riot'].replace(" ", "%20").replace("#", "%23")}/overview")
             
             try:
                 error_card = WebDriverWait(driver, random.randint(5, 10)).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".content--error")))
                 driver.close()
-                df.loc[len(df.index)] = [player['game_network_username'], "User Not Found or Data Private"]
+                df.loc[len(df.index)] = [player['riot'], "User Not Found or Data Private"]
                 continue
             except:
                 pass
             
             try:
                 rank_text = WebDriverWait(driver, ).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".rating-entry__rank")))
-                df.loc[len(df.index)] = [player['game_network_username'], team ,rank_text.text.split("\n")[1]]
+                df.loc[len(df.index)] = [player['riot'], team ,rank_text.text.split("\n")[1]]
                 driver.close()
             except:
-                df.loc[len(df.index)] = [player["game_network_username"],team, "No Rank Found"]
+                df.loc[len(df.index)] = [player["riot"],team, "No Rank Found"]
                 pass             
     df.to_csv(f"{file_name}.csv" if output_folder is None else f"./{output_folder}/{file_name}.csv",encoding="utf-8", index=False, header=True)
 
@@ -53,13 +53,13 @@ def scrape_peak_rank(json_data: dict, file_name:str = "Output", output_folder: s
     for team in tqdm(list(json_data), desc="Scraping Peak Ranks", bar_format="{l_bar}{bar:30}{r_bar}" , total=len(list(json_data))):
         for player in json_data[team]:
             driver = webdriver.Edge(options)
-            driver.get(f"https://tracker.gg/valorant/profile/riot/{player['game_network_username'].replace(" ", "%20").replace("#", "%23")}/overview")
+            driver.get(f"https://tracker.gg/valorant/profile/riot/{player['riot'].replace(" ", "%20").replace("#", "%23")}/overview")
             
             try:
                 error_card = WebDriverWait(driver, random.randint(5,10)).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".content--error")))
                 driver.close()
                 
-                df.loc[len(df.index)] = [player['game_network_username'], team, "Private or Not Real", "Unkown"]
+                df.loc[len(df.index)] = [player['riot'], team, "Private or Not Real", "Unkown"]
                 continue
             except:
                 pass
@@ -73,10 +73,10 @@ def scrape_peak_rank(json_data: dict, file_name:str = "Output", output_folder: s
                         if word.endswith("RR"):
                             rank_text.pop(rank_text.index(word))         
                 rank_text.insert(0, team)
-                rank_text.insert(0, player["game_network_username"])
+                rank_text.insert(0, player["riot"])
                 df.loc[len(df.index)] = rank_text
             except:
-                df.loc[len(df.index)] = [player["game_network_username"], team, "No Peak Found", "Unknown"]
+                df.loc[len(df.index)] = [player["riot"], team, "No Peak Found", "Unknown"]
                 pass
     
     df.to_csv(f"{file_name}.csv" if output_folder is None else f"./{output_folder}/{file_name}.csv",encoding="utf-8", index=False, header=True)  
@@ -105,7 +105,7 @@ def scrape_current_team_average(json_data: dict, file_name:str = "Output", outpu
         for  player in json_data[team]:
             
             driver = webdriver.Edge(options)
-            driver.get(f"https://tracker.gg/valorant/profile/riot/{player['game_network_username'].replace(" ", "%20").replace("#", "%23")}/overview")
+            driver.get(f"https://tracker.gg/valorant/profile/riot/{player['riot'].replace(" ", "%20").replace("#", "%23")}/overview")
             
             try:
                 error_card = WebDriverWait(driver, random.randint(5, 10)).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".content--error")))
